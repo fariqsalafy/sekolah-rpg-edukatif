@@ -263,6 +263,38 @@ function nameTag(text, color) {
   return s;
 }
 
+function lessonCanvas(ent) {
+  return textCanvas(512, 256, ctx => {
+    ctx.fillStyle = '#f4f4f2';
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.fillStyle = ent.color;
+    ctx.fillRect(0, 0, 512, 56);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 30px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(ent.label, 18, 38);
+    ctx.font = '600 22px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(ent.teacher, 494, 38);
+    ctx.fillStyle = '#232527';
+    ctx.font = '500 24px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    let line = '';
+    let y = 100;
+    for (const w of ent.lesson.split(' ')) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > 470) {
+        ctx.fillText(line, 24, y);
+        y += 32;
+        line = w;
+      } else {
+        line = test;
+      }
+    }
+    ctx.fillText(line, 24, y);
+  });
+}
+
 function buildTeacher(room) {
   const g = new THREE.Group();
   const M = {
@@ -694,7 +726,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     addSolid(0.26, 2.6, 0.26, cx + 1.65, 1.3, -2.15, colorMat, false);
     addSolid(3.6, 0.24, 0.34, cx, 2.62, -2.15, colorMat, false);
     addSolid(3.7, 1.9, 0.1, cx, 1.35, -7.9, frameMat, false);
-    addSolid(3.5, 1.7, 0.06, cx, 1.35, -7.82, boardMat, false);
+    const board = mesh(new THREE.PlaneGeometry(3.5, 1.7), new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(lessonCanvas(room)), roughness: 0.9 }));
+    place(board, cx, 1.35, -7.818);
+    board.receiveShadow = true;
+    scene.add(board);
     for (const dz of [-4.2, -5.9]) {
       for (const dx of [-1.7, 0, 1.7]) {
         addSolid(0.9, 0.72, 0.55, cx + dx, 0.36, dz, deskMat, true, false);
@@ -1685,8 +1720,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const swing = Math.sin(phase) * 0.55 * amt;
     if (legL) legL.rotation.x = swing;
     if (legR) legR.rotation.x = -swing;
-    if (armL) armL.rotation.x = -swing * 0.8;
-    if (armR) armR.rotation.x = swing * 0.8;
+    if (shot) {
+      if (armL) armL.rotation.x = -2.0;
+      if (armR) armR.rotation.x = -2.0;
+    } else {
+      if (armL) armL.rotation.x = -swing * 0.8;
+      if (armR) armR.rotation.x = swing * 0.8;
+    }
     player.position.y = Math.abs(Math.sin(phase)) * 0.05 * amt;
 
     for (const g of npcList) {
