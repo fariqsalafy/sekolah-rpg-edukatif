@@ -207,10 +207,11 @@ function loadProgress() {
       lab: p.lab && typeof p.lab === 'object' ? p.lab : {},
       quests: p.quests && typeof p.quests === 'object' ? p.quests : {},
       stars: Array.isArray(p.stars) ? p.stars : [],
+      playMs: p.playMs || 0,
       carry: p.carry && typeof p.carry === 'object' ? p.carry : null
     };
   } catch (e) {
-    return { xp: 0, done: {}, notified: false, uang: 10000, rank: 0, trash: [], kebun: [], lab: {}, quests: {}, stars: [], carry: null };
+    return { xp: 0, done: {}, notified: false, uang: 10000, rank: 0, trash: [], kebun: [], lab: {}, quests: {}, stars: [], playMs: 0, carry: null };
   }
 }
 
@@ -1194,6 +1195,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       parts.push(line(!!prog.done[id], txt));
     }
     for (const q of QUESTS) parts.push(line(prog.quests[q.id] === 'done', `Tugas: ${q.item}`));
+    const mins = Math.floor((prog.playMs || 0) / 60000);
+    parts.push(`<p><b>Rank:</b> ${(RANKS.filter(r => prog.xp >= r[0]).pop() || ['0', 'Pemula'])[1]} · <b>XP:</b> ${prog.xp} · <b>Waktu bermain:</b> ${mins} menit</p>`);
     dlgBody.innerHTML = parts.join('');
     dlgActions.innerHTML = '';
     const bOk = document.createElement('button');
@@ -1762,6 +1765,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   function tick(dt, t) {
     ringMat.opacity = 0.22 + Math.sin(t / 300) * 0.14;
+    prog.playMs += dt * 1000;
+    playSave += dt;
+    if (playSave > 60) {
+      playSave = 0;
+      saveProgress(prog);
+    }
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     if (h > 0 && Math.abs(camera.aspect - w / h) > 0.001) {
@@ -1958,7 +1967,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       if (dialogOpen && !canteenItem) closeDlg();
     }
 
-    if (prog.carry && prog.carry.target !== 'lib') {
+    if (!dialogOpen && prog.carry && prog.carry.target !== 'lib') {
       const zoneIa = interactables.find(ia => ia.id === prog.carry.target);
       if (zoneIa && Math.hypot(player.position.x - zoneIa.x, player.position.z - zoneIa.z) < zoneIa.r * 0.9) {
         deliverQuest(zoneIa);
@@ -2015,6 +2024,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   let phase = 0;
   let mapTick = 0;
+  let playSave = 0;
   const npcList = [buKantin, pakTono, buRina];
   SCHOOL_ROOMS.forEach((r, i) => {
     const tm = scene.children.find(o => o.isGroup && Math.abs(o.position.x - r.cx) < 0.01 && Math.abs(o.position.z + 6.8) < 0.01);
