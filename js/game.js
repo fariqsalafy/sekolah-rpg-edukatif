@@ -1852,6 +1852,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
     if (intro > 0) {
       intro -= dt;
+      if (intro <= 0) toast('Tap chip XP untuk melihat daftar tujuan!');
       const k = Math.max(0, intro) / 3.2;
       const iy = -Math.PI / 2 + k * Math.PI * 0.7;
       const id = 5.2 + k * 4.5;
