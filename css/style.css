@@ -749,6 +749,15 @@ body.in-game #stage { height: 100dvh; }
 
 .g-dlg-actions button:active { transform: scale(0.97); }
 
+.g-dlg-actions .pulse {
+  animation: gPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes gPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 3px #00a2ff33; }
+}
+
 .g-dlg-actions .primary {
   background: var(--blue);
   color: #fff;

@@ -86,6 +86,14 @@ export const LAB_LIQUIDS = {
 
 const EXTRA_DONE = ['lib', 'bball', 'fb', 'mus', 'kebun', 'lab', 'trash', 'stars'];
 
+const TIPS = {
+  mtk: ['Latihan perkalian 10 menit setiap hari membuat hitunganmu makin cepat.', 'Pecahan: 1/2 = 0,5 artinya separuh dari keseluruhan.', 'Pembagian adalah kebalikan dari perkalian.'],
+  ipa: ['Daun yang hijau berarti klorofilnya aktif menangkap cahaya.', 'Tanaman butuh air, cahaya, dan udara untuk fotosintesis.', 'Ayo cek kebun sekolah, tanaman juga butuh perawatan!'],
+  bindo: ['Bacalah buku 15 menit setiap hari untuk memperkaya kosakata.', 'Kalimat efektif dimulai dengan subjek di awal.', 'Tulis cerita harianmu, kemampuan menimu akan berkembang.'],
+  bing: ['Sapa guru dengan "Good morning" saat pagi hari.', '"Excuse me" dipakai saat ingin menegur dengan sopan.', 'Coba hitung benda di sekitarmu dalam bahasa Inggris.'],
+  pai: ['Shalat lima waktu membuat hati tetap tenang.', 'Mulai setiap kegiatan baik dengan bismillah.', 'Ingatkan keluargamu untuk shalat berjamaah.']
+};
+
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
     color: new THREE.Color(color),
@@ -1082,6 +1090,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let quizIdx = 0;
   let quizXp = 0;
   let entWasDone = false;
+  const visits = {};
   let answerTimer = null;
   let canteenItem = null;
   let hasEntered = false;
@@ -1254,7 +1263,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     canteenItem = null;
     const done = !!prog.done[ent.id];
     setHead(ent.color, `${ent.label} — ${ent.teacher}`);
-    dlgBody.innerHTML = `<p>${ent.lesson}</p>${done ? '<p><b>Kamu sudah menyelesaikan pelajaran ini.</b></p>' : ''}`;
+    let extra = '';
+    if (done && TIPS[ent.id]) {
+      visits[ent.id] = (visits[ent.id] || 0) + 1;
+      const tips = TIPS[ent.id];
+      extra = `<p><i>Tip ${ent.teacher}: "${tips[(visits[ent.id] - 1) % tips.length]}"</i></p>`;
+    }
+    dlgBody.innerHTML = `<p>${ent.lesson}</p>${done ? '<p><b>Kamu sudah menyelesaikan pelajaran ini.</b></p>' : ''}${extra}`;
     dlgActions.innerHTML = '';
     const bQuiz = document.createElement('button');
     bQuiz.className = 'primary';
@@ -1263,6 +1278,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const qg = questGiverFor(ent.id);
     if (qg) {
       const bQ = document.createElement('button');
+      bQ.className = 'pulse';
       bQ.textContent = `Tugas: ${qg.item}`;
       bQ.onclick = () => acceptQuest(qg);
       dlgActions.append(bQ);
@@ -1334,7 +1350,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const qg = questGiverFor('kantin');
     if (qg) {
       const bQ = document.createElement('button');
-      bQ.className = 'primary';
+      bQ.className = 'pulse primary';
       bQ.textContent = `Tugas: ${qg.item}`;
       bQ.onclick = () => acceptQuest(qg);
       dlgActions.append(bQ);
