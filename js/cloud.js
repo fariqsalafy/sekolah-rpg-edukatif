@@ -54,6 +54,7 @@ async function push() {
     const res = await Promise.race([
       fetch(`${SB_URL}/rest/v1/${TBL}`, {
         method: 'POST',
+        keepalive: true,
         headers: {
           apikey: SB_KEY,
           Authorization: `Bearer ${SB_KEY}`,
