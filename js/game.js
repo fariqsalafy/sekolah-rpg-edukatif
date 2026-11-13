@@ -730,6 +730,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const player = buildCharacter(characterConfig);
   player.position.set(-20.5, 0, 0);
   player.rotation.y = Math.PI / 2;
+  player.add(nameTag(characterConfig.name || 'Siswa', '#00a2ff'));
+  player.children[player.children.length - 1].position.y = 2.15;
   scene.add(player);
   const legL = player.getObjectByName('legL');
   const legR = player.getObjectByName('legR');
@@ -801,6 +803,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     hud.querySelector('#gXp').textContent = `XP ${prog.xp}`;
   };
   updateHud();
+  hud.querySelector('#gXp').addEventListener('click', openObjectives);
 
   const hintEl = hud.querySelector('#gHint');
   const updateHint = () => {
@@ -1078,8 +1081,30 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     toast(`Tugas diterima: bawa ${q.item}`);
   }
 
-  function deliverQuest(room) {
-    const c = prog.carry;
+  function openObjectives() {
+    dialogOpen = true;
+    canteenItem = null;
+    setHead('#00a2ff', 'Daftar Tujuan');
+    const line = (ok, txt) => `<p>${ok ? '<span class="g-chip" style="background:#2e9e5b"></span>' : '<span class="g-chip" style="background:#4a4f55"></span>'}${txt}</p>`;
+    const parts = [];
+    for (const r of SCHOOL_ROOMS) parts.push(line(!!prog.done[r.id], `${r.label} — ${r.teacher}`));
+    for (const s of SPORTS) parts.push(line(!!prog.done[s.id], `Olahraga ${s.label}`));
+    for (const [id, txt] of [['lib', 'Perpustakaan'], ['lab', 'Lab IPA'], ['mus', 'Wudhu di Mushola'], ['kebun', 'Menyiram Kebun'], ['bball', 'Mini-game Basket'], ['fb', 'Penalti'], ['trash', `Bersih-bersih (${prog.trash.length}/12)`], ['stars', `Bintang (${prog.stars.length}/6)`]]) {
+      parts.push(line(!!prog.done[id], txt));
+    }
+    for (const q of QUESTS) parts.push(line(prog.quests[q.id] === 'done', `Tugas: ${q.item}`));
+    dlgBody.innerHTML = parts.join('');
+    dlgActions.innerHTML = '';
+    const bOk = document.createElement('button');
+    bOk.className = 'primary';
+    bOk.textContent = 'Lanjut Bermain';
+    bOk.onclick = closeDlg;
+    dlgActions.append(bOk);
+    dlgEl.hidden = false;
+    popIn(dlgEl);
+  }
+
+  function deliverQuest(room) {    const c = prog.carry;
     const q = QUESTS.find(x => x.id === c.id);
     prog.quests[q.id] = 'done';
     prog.carry = null;
