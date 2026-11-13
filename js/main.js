@@ -2,6 +2,12 @@ import * as THREE from 'three';
 import { buildCharacter } from './character.js';
 import { createGame } from './game.js';
 import { initCloud } from './cloud.js';
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 import {
   DEFAULT_CONFIG, HAIR_STYLES_PUTRA, HAIR_COLORS,
   JILBAB_COLORS, SKIN_TONES, GLASSES, GLASSES_COLORS,

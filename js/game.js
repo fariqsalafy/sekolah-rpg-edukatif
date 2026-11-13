@@ -842,7 +842,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const dA = acts.filter(id => prog.done[id]).length;
     const dQ = QUESTS.filter(q => prog.quests[q.id] === 'done').length;
     hud.querySelector('#gProg').textContent = `Kelas ${dR}/${SCHOOL_ROOMS.length} · Aktivitas ${dA}/${acts.length} · Tugas ${dQ}/${QUESTS.length}`;
-    hud.querySelector('#gXp').textContent = `XP ${prog.xp}`;
+    hud.querySelector('#gXp').textContent = `XP ${prog.xp} · Rp${prog.uang.toLocaleString('id-ID')}`;
   };
   updateHud();
   hud.querySelector('#gXp').addEventListener('click', openObjectives);
@@ -1718,7 +1718,17 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     { id: 'bt', x: 31.5, z: 6.0, r: 2.9, opened: false, open: () => openLesson(SPORTS[3]) }
   ];
 
+  const ringGeo = new THREE.RingGeometry(0.55, 0.75, 28);
+  const ringMat = new THREE.MeshBasicMaterial({ color: '#00a2ff', transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+  for (const ia of interactables) {
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(ia.x, 0.03, ia.z);
+    scene.add(ring);
+  }
+
   function tick(dt, t) {
+    ringMat.opacity = 0.22 + Math.sin(t / 300) * 0.14;
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     if (h > 0 && Math.abs(camera.aspect - w / h) > 0.001) {

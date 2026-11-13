@@ -1,0 +1,19 @@
+{
+  "name": "RPG Edukatif SMP ABBS Surakarta",
+  "short_name": "RPG ABBS",
+  "description": "Game web RPG edukatif 3D blocky: jelajahi sekolah, belajar dari guru, main sambil belajar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#202326",
+  "theme_color": "#202326",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
