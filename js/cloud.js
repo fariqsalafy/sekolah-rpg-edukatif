@@ -23,9 +23,12 @@ function deviceId() {
 
 async function pull() {
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/${TBL}?key=eq.${PREFIX}${deviceId()}&select=value&limit=1`, {
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
-    });
+    const res = await Promise.race([
+      fetch(`${SB_URL}/rest/v1/${TBL}?key=eq.${PREFIX}${deviceId()}&select=value&limit=1`, {
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+    ]);
     if (!res.ok) return null;
     const rows = await res.json();
     if (!rows.length) return null;
@@ -48,16 +51,19 @@ async function push() {
       karakter: localStorage.getItem(CHAR_KEY) || '',
       progres: localStorage.getItem(PROG_KEY) || ''
     };
-    const res = await fetch(`${SB_URL}/rest/v1/${TBL}`, {
-      method: 'POST',
-      headers: {
-        apikey: SB_KEY,
-        Authorization: `Bearer ${SB_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicateds,return=minimal'
-      },
-      body: JSON.stringify([{ key: PREFIX + deviceId(), value: JSON.stringify(payload), updated_at: new Date().toISOString() }])
-    });
+    const res = await Promise.race([
+      fetch(`${SB_URL}/rest/v1/${TBL}`, {
+        method: 'POST',
+        headers: {
+          apikey: SB_KEY,
+          Authorization: `Bearer ${SB_KEY}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicateds,return=minimal'
+        },
+        body: JSON.stringify([{ key: PREFIX + deviceId(), value: JSON.stringify(payload), updated_at: new Date().toISOString() }])
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+    ]);
     if (!res.ok) throw new Error('push gagal ' + res.status);
     try {
       localStorage.setItem('sekolahRpg.synced', String(Date.now()));

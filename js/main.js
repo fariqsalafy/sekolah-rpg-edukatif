@@ -258,6 +258,7 @@ function enterSchool() {
   document.body.classList.add('in-game');
   mode = 'game';
   game = createGame({ canvas, renderer, characterConfig: { ...state }, toast, onEdit: exitToEdit });
+  toast(`Selamat datang di SMP ABBS Surakarta, ${state.name.trim()}!`);
 }
 
 function exitToEdit() {

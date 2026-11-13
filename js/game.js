@@ -837,6 +837,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let canteenItem = null;
   let hasEntered = false;
   let exitOpened = false;
+  let kebunHinted = false;
   let powerTimer = null;
   let landTimer = null;
   let shot = null;
@@ -1137,9 +1138,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       if (mix.length < 2) {
         for (const k of ['A', 'B', 'C']) {
           const b = document.createElement('button');
-          b.innerHTML = `<span class="g-chip" style="background:${LAB_LIQUIDS[k].color}"></span>${LAB_LIQUIDS[k].name}`;
+          b.className = 'g-opt';
+          b.innerHTML = `<span class="g-chip" style="background:${LAB_LIQUIDS[k].color}"></span>Tuang ${LAB_LIQUIDS[k].name}`;
           b.onclick = () => pour(k);
-          dlgActions.append(b);
+          dlgBody.appendChild(b);
         }
       }
       const bClr = document.createElement('button');
@@ -1468,6 +1470,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     }
 
     if (!dialogOpen) {
+      for (const tm of trashMeshes) tm.mesh.rotation.y += dt * 1.4;
       for (let i = trashMeshes.length - 1; i >= 0; i--) {
         const tm = trashMeshes[i];
         if (Math.hypot(player.position.x - tm.mesh.position.x, player.position.z - tm.mesh.position.z) < 0.62) {
@@ -1501,6 +1504,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
           }
         }
       });
+      if (!kebunHinted && !prog.done.kebun && Math.hypot(player.position.x + 9, player.position.z + 10.5) < 7) {
+        kebunHinted = true;
+        toast('Kebun: dekati tiap tanaman untuk menyiramnya!');
+      }
     }
 
     const room = roomAt(player.position.x, player.position.z);
