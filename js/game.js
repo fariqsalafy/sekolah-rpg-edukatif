@@ -188,6 +188,7 @@ function loadProgress() {
       done: p.done || {},
       notified: !!p.notified,
       uang: typeof p.uang === 'number' ? p.uang : 10000,
+      rank: p.rank || 0,
       trash: Array.isArray(p.trash) ? p.trash : [],
       kebun: Array.isArray(p.kebun) ? p.kebun : [],
       lab: p.lab && typeof p.lab === 'object' ? p.lab : {},
@@ -196,7 +197,7 @@ function loadProgress() {
       carry: p.carry && typeof p.carry === 'object' ? p.carry : null
     };
   } catch (e) {
-    return { xp: 0, done: {}, notified: false, uang: 10000, trash: [], kebun: [], lab: {}, quests: {}, stars: [], carry: null };
+    return { xp: 0, done: {}, notified: false, uang: 10000, rank: 0, trash: [], kebun: [], lab: {}, quests: {}, stars: [], carry: null };
   }
 }
 
@@ -491,6 +492,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const buKantin = buildTeacher({ gender: 'putri', color: '#c96f2e', skin: '#b97f52', hijab: '#5b3a72' });
   buKantin.position.set(10.2, 0, 4.35);
   buKantin.rotation.y = Math.PI;
+  buKantin.userData.rot0 = Math.PI;
   buKantin.add(nameTag('Bu Kantin', '#c96f2e'));
   buKantin.children[buKantin.children.length - 1].position.y = 2.25;
   scene.add(buKantin);
@@ -604,6 +606,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const buRina = buildTeacher({ gender: 'putri', color: '#b8863b', skin: '#eab890', hijab: '#4a2e5f' });
   buRina.position.set(-6.3, 0, 3.6);
   buRina.rotation.y = Math.PI;
+  buRina.userData.rot0 = Math.PI;
   buRina.add(nameTag('Bu Rina', '#b8863b'));
   buRina.children[buRina.children.length - 1].position.y = 2.25;
   scene.add(buRina);
@@ -710,6 +713,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const pakTono = buildTeacher({ gender: 'putra', color: '#2e9e5b', skin: '#d69f70' });
   pakTono.position.set(18.6, 0, 0);
   pakTono.rotation.y = -Math.PI / 2;
+  pakTono.userData.rot0 = -Math.PI / 2;
   pakTono.add(nameTag('Pak Tono', '#2e9e5b'));
   pakTono.children[pakTono.children.length - 1].position.y = 2.25;
   scene.add(pakTono);
@@ -933,6 +937,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let pinchDist = 0;
   const camDown = e => {
     ensureAudio();
+    intro = 0;
     camPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     canvas.setPointerCapture(e.pointerId);
     if (camPointers.size === 2) {
@@ -970,6 +975,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   };
   const joyDown = e => {
     ensureAudio();
+    intro = 0;
     joy.id = e.pointerId;
     joyEl.setPointerCapture(e.pointerId);
     joyMove(e);
@@ -1000,6 +1006,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const keys = {};
   const keyDown = e => {
     ensureAudio();
+    intro = 0;
     const k = e.key.toLowerCase();
     keys[k] = true;
     if (k.startsWith('arrow')) e.preventDefault();
@@ -1030,6 +1037,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let hasEntered = false;
   let exitOpened = false;
   let kebunHinted = false;
+  let intro = 3.2;
   let powerTimer = null;
   let landTimer = null;
   let shot = null;
@@ -1042,11 +1050,20 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     dialogOpen = false;
   }
 
+  const RANKS = [[50, 'Pemula'], [120, 'Siswa Rajin'], [200, 'Bintang Kelas'], [300, 'Juara Sekolah']];
+
   function addXp(n) {
     prog.xp += n;
     saveProgress(prog);
     updateHud();
     bumpXp();
+    const r = RANKS.find(x => prog.xp >= x[0]);
+    if (r && r[0] > prog.rank) {
+      prog.rank = r[0];
+      saveProgress(prog);
+      sfx.quest();
+      toast(`Rank baru: ${r[1]}!`);
+    }
   }
 
   function checkAllDone() {
@@ -1650,7 +1667,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     let mx = fx * -jy + rx * jx;
     let mz = fz * -jy + rz * jx;
     const mLen = Math.hypot(mx, mz);
-    const moving = mLen > 0.01 && !dialogOpen;
+    const moving = mLen > 0.01 && !dialogOpen && intro <= 0;
     if (moving) {
       mx /= mLen;
       mz /= mLen;
@@ -1674,6 +1691,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
     for (const g of npcList) {
       g.position.y = Math.abs(Math.sin(t * 0.002 + g.userData.phase)) * 0.03;
+      const nd = Math.hypot(player.position.x - g.position.x, player.position.z - g.position.z);
+      if (nd < 3.6) {
+        g.rotation.y = lerpAngle(g.rotation.y, Math.atan2(player.position.x - g.position.x, player.position.z - g.position.z), Math.min(1, dt * 3.5));
+      } else if (g.userData.rot0 !== undefined) {
+        g.rotation.y = lerpAngle(g.rotation.y, g.userData.rot0, Math.min(1, dt * 2));
+      }
     }
 
     if (shot) {
@@ -1827,13 +1850,26 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       exitOpened = false;
     }
 
-    const desired = new THREE.Vector3(
-      player.position.x + Math.sin(camYaw) * camDist,
-      player.position.y + camDist * camRatio,
-      player.position.z + Math.cos(camYaw) * camDist
-    );
-    camera.position.lerp(desired, Math.min(1, dt * 7));
-    camera.lookAt(player.position.x, player.position.y + 1.0, player.position.z);
+    if (intro > 0) {
+      intro -= dt;
+      const k = Math.max(0, intro) / 3.2;
+      const iy = -Math.PI / 2 + k * Math.PI * 0.7;
+      const id = 5.2 + k * 4.5;
+      camera.position.set(
+        player.position.x + Math.sin(iy) * id,
+        1.0 + id * (0.62 + k * 0.2),
+        player.position.z + Math.cos(iy) * id
+      );
+      camera.lookAt(player.position.x, 1.15, player.position.z);
+    } else {
+      const desired = new THREE.Vector3(
+        player.position.x + Math.sin(camYaw) * camDist,
+        player.position.y + camDist * camRatio,
+        player.position.z + Math.cos(camYaw) * camDist
+      );
+      camera.position.lerp(desired, Math.min(1, dt * 7));
+      camera.lookAt(player.position.x, player.position.y + 1.0, player.position.z);
+    }
 
     renderer.render(scene, camera);
   }
@@ -1845,6 +1881,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const tm = scene.children.find(o => o.isGroup && Math.abs(o.position.x - r.cx) < 0.01 && Math.abs(o.position.z + 6.8) < 0.01);
     if (tm) {
       tm.userData.phase = i * 1.7;
+      tm.userData.rot0 = tm.rotation.y;
       tm.add(nameTag(r.teacher, r.color));
       tm.children[tm.children.length - 1].position.y = 2.25;
       npcList.push(tm);
