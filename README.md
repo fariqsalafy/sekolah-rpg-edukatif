@@ -2,31 +2,82 @@
 
 Game web 3D bergaya blocky untuk siswa SMP: kustomisasi karakter, jelajahi sekolah, belajar dari guru, dan main sambil belajar.
 
+- **Main sekarang**: https://fariqsalafy.github.io/sekolah-rpg-edukatif/
+- **Repo**: https://github.com/fariqsalafy/sekolah-rpg-edukatif (branch `main`, GitHub Pages dari root)
+
+## Lanjut kerja di device lain
+
+```bash
+git clone https://github.com/fariqsalafy/sekolah-rpg-edukatif.git
+cd sekolah-rpg-edukatif
+npm start        # = python3 -m http.server 8080
+```
+
+Buka `http://127.0.0.1:8080` di browser. Kode ES modules — wajib lewat server (buka file langsung tidak akan jalan).
+
+Cek sebelum push:
+
+```bash
+node --check js/game.js   # validasi sintaks
+npm test                  # smoke test data (karakter, kelas, quest, aktivitas)
+```
+
+Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit). Verifikasi dengan `curl -s -o /dev/null -w "%{http_code}" https://fariqsalafy.github.io/sekolah-rpg-edukatif/`. Kalau file JS lama masih ke-cache di PWA, naikkan versi cache `rpg-abbs-v2` di `sw.js`.
+
+## Struktur file
+
+| File | Isi |
+|---|---|
+| `index.html` | Layar kustomisasi karakter + canvas game, importmap three, anime.js, manifest |
+| `js/main.js` | Bootstrap: `await initCloud()`, load state, mulai game, registrasi service worker |
+| `js/options.js` + `js/character.js` | Pilihan kombinasi karakter (putra/putri, jilbab, rambut, seragam) + pembangunan karakter blocky |
+| `js/schoolData.js` | Data 5 kelas: id, guru, warna, materi, 3 soal kuis, posisi |
+| `js/game.js` | Inti game (~2100 baris): dunia 3D, semua dialog/aktivitas, tick loop, HUD, minimap, camera |
+| `js/cloud.js` | Sinkronisasi Supabase (detail di bawah) |
+| `css/style.css` | UI: dialog, HUD, joystick, widget, minimap, konfeti, safe-area |
+| `sw.js`, `manifest.json`, `icon.svg` | PWA |
+| `tests/smoke.mjs` | Validasi data tanpa browser |
+| `vendor/` | three.module.min.js + anime.min.js (tanpa bundler/CDN) |
+
 ## Fitur
-- **Kustomisasi karakter**: putra/putri, jilbab syari untuk putri, 3 gaya rambut putra, kacamata, badan, 6 tema seragam (disimpan otomatis).
-- **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi tampil di papan tulis 3D + kuis tiap kelas.
-- **Kantin**: latihan aritmetika sosial (beli jajanan, total = harga x jumlah, saldo).
-- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangis + mini-game lempar basket & penalti (bar tenaga, bola parabola).
-- **Perpustakaan & Lab IPA**: buku untuk quest, eksperimen asam-basa-indikator.
-- **Mushola**: aktivitas tap urutan wudhu yang benar.
-- **Kebun sekolah**: siram tanaman dengan mendekatinya.
-- **Bersih-bersih & bintang**: 12 sampah + 6 bintang tersebar untuk dikumpulkan.
-- **Quest antar-barang**: 3 rantai tugas dari kantin dan guru.
-- **Immersif**: intro kamera sinematik, NPC menoleh saat didekati, nama di atas kepala, minimap, efek suara + getar, konfeti saat semua selesai, rank XP.
-- **Progres tersimpan** di localStorage + sinkronisasi cloud via Supabase (per perangkat).
-- **PWA**: bisa di-install ke layar utama (offline-friendly via service worker).
 
-## Teknologi
-Vanilla JS + Three.js (blocky chibi) + anime.js. Tanpa bundler — jalankan server statis apa pun:
+- **Kustomisasi karakter**: putra/putri, jilbab syari untuk putri (tanpa poni, rok panjang), 3 gaya rambut putra, kacamata, badan, 6 tema seragam (disimpan otomatis).
+- **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi tampil di papan tulis 3D, kuis 3 soal per kelas, tips guru berputar kalau pelajaran diulang.
+- **Kantin**: aritmetika sosial (total = harga × jumlah, saldo) + mini-game **Latihan Hitung Cepat** (soal acak +/−/×, streak, bonus XP terbatas per sesi).
+- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangkis + mini-game lempar basket & penalti (bar tenaga osilasi, bola parabola).
+- **Perpustakaan & Lab IPA**: quest ambil buku; eksperimen cairan A/B/C + indikator.
+- **Mushola**: tap urutan wudhu yang benar (5 langkah).
+- **Kebun sekolah**: siram 3 bedengan dengan mendekatinya.
+- **Bersih-bersih & bintang**: 12 sampah + 6 bintang tersebar.
+- **5 quest antar-barang**: q1 kantin→mtk, q2 mtk→ipa, q3 ipa→perpus→bing, q4 pai→mushola, q5 bindo→kantin. Pengantaran bisa ke ruangan atau zona.
+- **Sistem XP & rank**: Pemula → Siswa Rajin → Bintang Kelas → Juara Sekolah; konfeti saat 100% selesai.
+- **Immersif**: intro kamera sinematik 3 detik, NPC menoleh saat didekati, name tag di atas kepala, minimap dengan target tugas berkedip, cincin interaksi berdenyut, efek suara WebAudio + getar (bisa dimatikan).
+- **HUD**: kelas/aktivitas/tugas, chip XP (tap → daftar tujuan + tombol reset 2-tap), joystick + tombol zoom (kamera 3.0–16.5), tombol suara.
+- **PWA**: installable, service worker (vendor cache-first, sisanya network-first).
 
-```bash
-npm start      # python3 http.server 8080
-```
+## Penyimpanan & sinkron cloud
 
-Buka `http://127.0.0.1:8080` (atau URL GitHub Pages) di browser HP/desktop.
+localStorage (sumber kebenaran):
 
-## Tes
+- `sekolahRpg.karakter.v1` — pilihan karakter
+- `sekolahRpg.progres.v1` — `{ xp, done{}, notified, uang, rank, trash[], kebun[], lab{}, quests{}, stars[], playMs, carry }`
+- `sekolahRpg.device` — ID perangkat, `sekolahRpg.sfx` — status suara
 
-```bash
-npm test       # smoke test kombinasi karakter + data sekolah/aktivitas
-```
+Cloud (Supabase project `djybwvdjipxftxmtqjbt`, tabel **`app_settings`** — tabel publik yang sudah ada, anon key full CRUD, aman karena aplikasi lain hanya membaca key `wa_template_%`):
+
+- Key per perangkat: `rpg_save_<deviceId>`, value JSON string.
+- `js/cloud.js` membungkus `localStorage.setItem`: push debounce 1,5 detik (+ keepalive saat pagehide); pull hanya jika localStorage kosong (perangkat baru); timeout fetch 4–5 detik; localStorage tetap sumber kebenaran.
+
+## Konvensi kode
+
+- **Tanpa komentar** di source.
+- Vanilla JS ES modules, Three.js dari vendor lokal (importmap `"three"`), anime.js global (`const A = window.anime`).
+- Karakter blocky flat-face ala Roblox; putri jilbab syari + rok panjang; putra hanya 3 gaya rambut.
+- Semua posisi penting diekspor dari `js/game.js` untuk smoke test: `QUESTS, LIB, WUDHU_STEPS, TRASH_POS, STAR_POS, GARDEN_BEDS, LAB_LIQUIDS`.
+
+## Roadmap ide berikutnya
+
+- Mode guru: tautan pantau progres kelas (bisa pakai tabel `app_settings` juga).
+- Rapor mini: rekap nilai kuis per mata pelajaran.
+- Materi & soal bisa dipermudah diedit via `js/schoolData.js`.
+- Efek siang/malam atau suasana hari besar sekolah.
