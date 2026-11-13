@@ -1752,6 +1752,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     scene.add(ring);
   }
 
+  const binGeo = new THREE.CylinderGeometry(0.42, 0.36, 0.9, 12);
+  for (const [bx, bz] of [[-15.4, -3.2], [15.4, -2.6], [18.6, 7.4], [7.2, -12.4]]) {
+    const bin = mesh(binGeo, mat('#2e6b4f'));
+    place(bin, bx, 0.45, bz);
+    scene.add(bin);
+    addCollider(bx - 0.42, bx + 0.42, bz - 0.4, bz + 0.4);
+  }
+
   function tick(dt, t) {
     ringMat.opacity = 0.22 + Math.sin(t / 300) * 0.14;
     const w = canvas.clientWidth;
