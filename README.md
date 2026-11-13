@@ -4,15 +4,17 @@ Game web 3D bergaya blocky untuk siswa SMP: kustomisasi karakter, jelajahi sekol
 
 ## Fitur
 - **Kustomisasi karakter**: putra/putri, jilbab syari untuk putri, 3 gaya rambut putra, kacamata, badan, 6 tema seragam (disimpan otomatis).
-- **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi + kuis tiap kelas.
+- **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi tampil di papan tulis 3D + kuis tiap kelas.
 - **Kantin**: latihan aritmetika sosial (beli jajanan, total = harga x jumlah, saldo).
-- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangis + mini-game lempar basket & penalti.
-- **Perpustakaan & Lab IPA**: membaca buku dan eksperimen asam-basa-indikator.
+- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangis + mini-game lempar basket & penalti (bar tenaga, bola parabola).
+- **Perpustakaan & Lab IPA**: buku untuk quest, eksperimen asam-basa-indikator.
 - **Mushola**: aktivitas tap urutan wudhu yang benar.
-- **Kebun sekolah**: siram tanaman.
-- **Bersih-bersih**: 12 sampah tersebar untuk dikumpulkan.
+- **Kebun sekolah**: siram tanaman dengan mendekatinya.
+- **Bersih-bersih & bintang**: 12 sampah + 6 bintang tersebar untuk dikumpulkan.
 - **Quest antar-barang**: 3 rantai tugas dari kantin dan guru.
+- **Immersif**: intro kamera sinematik, NPC menoleh saat didekati, nama di atas kepala, minimap, efek suara + getar, konfeti saat semua selesai, rank XP.
 - **Progres tersimpan** di localStorage + sinkronisasi cloud via Supabase (per perangkat).
+- **PWA**: bisa di-install ke layar utama (offline-friendly via service worker).
 
 ## Teknologi
 Vanilla JS + Three.js (blocky chibi) + anime.js. Tanpa bundler — jalankan server statis apa pun:
