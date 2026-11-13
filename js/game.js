@@ -119,6 +119,9 @@ function lerpAngle(a, b, t) {
 
 let audioCtx = null;
 let soundOn = true;
+try {
+  soundOn = localStorage.getItem('sekolahRpg.sfx') !== '0';
+} catch (e) {}
 
 function tone(freq, dur, delay = 0, type = 'square', vol = 0.06) {
   if (!soundOn || !audioCtx) return;
@@ -958,9 +961,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   hud.querySelector('#gZoomIn').addEventListener('click', () => zoomBy(-1.4));
   hud.querySelector('#gZoomOut').addEventListener('click', () => zoomBy(1.4));
   const sndBtn = hud.querySelector('#gSnd');
+  sndBtn.classList.toggle('off', !soundOn);
   sndBtn.addEventListener('click', () => {
     soundOn = !soundOn;
     sndBtn.classList.toggle('off', !soundOn);
+    try {
+      localStorage.setItem('sekolahRpg.sfx', soundOn ? '1' : '0');
+    } catch (e) {}
     if (soundOn) {
       ensureAudio();
       sfx.pick();
@@ -1109,7 +1116,32 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     if (all && !prog.notified) {
       prog.notified = true;
       saveProgress(prog);
+      sfx.quest();
+      buzz([80, 60, 80, 60, 120]);
+      confetti();
       toast('MasyaAllah! Semua pelajaran, aktivitas, dan tugas sudah selesai. Kamu luar biasa!');
+    }
+  }
+
+  function confetti() {
+    if (!A) return;
+    for (let i = 0; i < 44; i++) {
+      const p = document.createElement('div');
+      p.className = 'g-cft';
+      p.style.left = `${Math.random() * 100}vw`;
+      p.style.background = ['#00a2ff', '#2e9e5b', '#ffd24a', '#e5484d', '#8b5cf6'][i % 5];
+      p.style.width = p.style.height = `${6 + Math.random() * 8}px`;
+      document.body.appendChild(p);
+      A({
+        targets: p,
+        translateY: [-40, window.innerHeight + 60],
+        translateX: [(Math.random() - 0.5) * 220],
+        rotate: Math.random() * 720 - 360,
+        duration: 2200 + Math.random() * 1600,
+        delay: Math.random() * 700,
+        easing: 'easeInQuad',
+        complete: () => p.remove()
+      });
     }
   }
 
@@ -1152,6 +1184,22 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     bOk.textContent = 'Lanjut Bermain';
     bOk.onclick = closeDlg;
     dlgActions.append(bOk);
+    const bRst = document.createElement('button');
+    bRst.textContent = 'Mulai Ulang';
+    bRst.onclick = () => {
+      if (bRst.dataset.arm) {
+        try {
+          localStorage.removeItem('sekolahRpg.progres.v1');
+          localStorage.removeItem('sekolahRpg.karakter.v1');
+        } catch (e) {}
+        location.reload();
+      } else {
+        bRst.dataset.arm = '1';
+        bRst.textContent = 'Yakin? Tap lagi';
+        toast('Tap sekali lagi untuk menghapus semua progres!');
+      }
+    };
+    dlgActions.append(bRst);
     dlgEl.hidden = false;
     popIn(dlgEl);
   }

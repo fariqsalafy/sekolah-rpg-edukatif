@@ -856,3 +856,11 @@ body.in-game #stage { height: 100dvh; }
   font-weight: 700;
   margin: 2px 0 8px;
 }
+
+.g-cft {
+  position: fixed;
+  top: 0;
+  border-radius: 2px;
+  z-index: 60;
+  pointer-events: none;
+}
