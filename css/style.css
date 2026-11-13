@@ -639,6 +639,19 @@ body.in-game #stage { height: 100dvh; }
   pointer-events: auto;
 }
 
+#gMap {
+  position: absolute;
+  top: 64px;
+  right: 12px;
+  width: 118px;
+  height: 118px;
+  border-radius: 14px;
+  border: 2px solid var(--line);
+  background: #101214d9;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .g-zoom button {
   width: 48px;
   height: 48px;

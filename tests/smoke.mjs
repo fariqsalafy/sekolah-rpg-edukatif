@@ -81,6 +81,7 @@ try {
     }
     if (new Set(gameMod.WUDHU_STEPS).size !== 5) throw new Error('langkah wudhu tidak lengkap');
     if (gameMod.TRASH_POS.length !== 12) throw new Error('jumlah sampah bukan 12');
+    if (gameMod.STAR_POS.length !== 6) throw new Error('jumlah bintang bukan 6');
     if (gameMod.GARDEN_BEDS.length !== 3) throw new Error('jumlah bed kebun bukan 3');
     if (!gameMod.LIB.id || !gameMod.LIB.quiz) throw new Error('data perpustakaan tidak lengkap');
     if (Object.keys(gameMod.LAB_LIQUIDS).sort().join('') !== 'ABC') throw new Error('data lab tidak lengkap');

@@ -68,6 +68,10 @@ export const TRASH_POS = [
   [-6.9, -11.4], [21.0, -5.6]
 ];
 
+export const STAR_POS = [
+  [-19.5, 4.2], [-17, -12.5], [8.5, -12], [17.6, 5.5], [39.8, 2.8], [-9, 9.2]
+];
+
 export const GARDEN_BEDS = [
   { x: -12, z: -10.5 }, { x: -9, z: -10.5 }, { x: -6, z: -10.5 }
 ];
@@ -78,7 +82,7 @@ export const LAB_LIQUIDS = {
   C: { name: 'Indikator (C)', color: '#8b5cf6' }
 };
 
-const EXTRA_DONE = ['lib', 'bball', 'fb', 'mus', 'kebun', 'lab', 'trash'];
+const EXTRA_DONE = ['lib', 'bball', 'fb', 'mus', 'kebun', 'lab', 'trash', 'stars'];
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
@@ -188,10 +192,11 @@ function loadProgress() {
       kebun: Array.isArray(p.kebun) ? p.kebun : [],
       lab: p.lab && typeof p.lab === 'object' ? p.lab : {},
       quests: p.quests && typeof p.quests === 'object' ? p.quests : {},
+      stars: Array.isArray(p.stars) ? p.stars : [],
       carry: p.carry && typeof p.carry === 'object' ? p.carry : null
     };
   } catch (e) {
-    return { xp: 0, done: {}, notified: false, uang: 10000, trash: [], kebun: [], lab: {}, quests: {}, carry: null };
+    return { xp: 0, done: {}, notified: false, uang: 10000, trash: [], kebun: [], lab: {}, quests: {}, stars: [], carry: null };
   }
 }
 
@@ -234,6 +239,26 @@ function makeSprite(title, sub, color, scale, pos) {
   const s = new THREE.Sprite(m);
   s.scale.set(scale[0], scale[1], 1);
   s.position.set(pos[0], pos[1], pos[2]);
+  return s;
+}
+
+function nameTag(text, color) {
+  const cv = textCanvas(256, 64, ctx => {
+    ctx.fillStyle = 'rgba(16,18,20,0.78)';
+    ctx.beginPath();
+    ctx.roundRect(8, 10, 240, 44, 12);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.font = '700 26px system-ui, sans-serif';
+    ctx.fillText(text, 128, 41);
+  });
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false }));
+  s.scale.set(1.7, 0.42, 1);
+  s.renderOrder = 5;
   return s;
 }
 
@@ -466,6 +491,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const buKantin = buildTeacher({ gender: 'putri', color: '#c96f2e', skin: '#b97f52', hijab: '#5b3a72' });
   buKantin.position.set(10.2, 0, 4.35);
   buKantin.rotation.y = Math.PI;
+  buKantin.add(nameTag('Bu Kantin', '#c96f2e'));
+  buKantin.children[buKantin.children.length - 1].position.y = 2.25;
   scene.add(buKantin);
   addCollider(9.7, 10.7, 3.9, 4.8);
 
@@ -577,6 +604,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const buRina = buildTeacher({ gender: 'putri', color: '#b8863b', skin: '#eab890', hijab: '#4a2e5f' });
   buRina.position.set(-6.3, 0, 3.6);
   buRina.rotation.y = Math.PI;
+  buRina.add(nameTag('Bu Rina', '#b8863b'));
+  buRina.children[buRina.children.length - 1].position.y = 2.25;
   scene.add(buRina);
   addCollider(-6.8, -5.8, 3.1, 4.1);
   const bookMesh = place(box(0.5, 0.34, 0.12, mat('#39c2ff')), -8.6, 0.95, 4.2);
@@ -646,6 +675,15 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     trashMeshes.push({ mesh: m, i });
   });
 
+  const starMat = mat('#ffd24a', { roughness: 0.35, emissive: new THREE.Color('#b98a00'), emissiveIntensity: 0.5 });
+  const stars = [];
+  STAR_POS.forEach(([sx, sz], i) => {
+    const s = box(0.32, 0.32, 0.32, starMat);
+    place(s, sx, 0.55, sz, [0, Math.PI / 4, Math.PI / 4]);
+    scene.add(s);
+    stars.push({ mesh: s, i });
+  });
+
   for (const room of SCHOOL_ROOMS) {
     const cx = ROOM_CX[SCHOOL_ROOMS.indexOf(room)];
     const colorMat = mat(room.color);
@@ -672,6 +710,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const pakTono = buildTeacher({ gender: 'putra', color: '#2e9e5b', skin: '#d69f70' });
   pakTono.position.set(18.6, 0, 0);
   pakTono.rotation.y = -Math.PI / 2;
+  pakTono.add(nameTag('Pak Tono', '#2e9e5b'));
+  pakTono.children[pakTono.children.length - 1].position.y = 2.25;
   scene.add(pakTono);
   addCollider(18.1, 19.1, -0.5, 0.5);
 
@@ -706,6 +746,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       trashMeshes.splice(i, 1);
     }
   }
+  for (let i = stars.length - 1; i >= 0; i--) {
+    if (prog.stars.includes(stars[i].i)) {
+      scene.remove(stars[i].mesh);
+      stars.splice(i, 1);
+    }
+  }
   bedPlant.forEach((p, i) => waterBed(i, p, true));
   if (prog.done.lib) setSignDone(LIB);
   if (prog.done.lab) setSignDone(ENT_LAB);
@@ -721,6 +767,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       <div class="g-mid"><b id="gName"></b><span id="gProg"></span></div>
       <div class="g-xp" id="gXp">XP 0</div>
     </div>
+    <canvas id="gMap" width="120" height="120"></canvas>
     <div id="gJoy"><div id="gKnob"></div></div>
     <div class="g-zoom">
       <button id="gZoomIn" type="button">+</button>
@@ -762,6 +809,75 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   };
   updateHint();
   const hintTimer = setTimeout(() => { if (!prog.carry) hintEl.style.opacity = '0'; }, 6000);
+
+  const mapEl = hud.querySelector('#gMap');
+  const mapCtx = mapEl.getContext('2d');
+  const W2M = (x, z) => [(x + 25) / 70 * 120, (z + 20) / 32 * 120];
+  const mapDots = [
+    { x: () => 11.15, z: () => 5.3, c: '#c96f2e' },
+    { x: () => -9, z: () => 5.5, c: '#b8863b' },
+    { x: () => 1.075, z: () => 5.3, c: '#39c2ff' },
+    { x: () => 2.5, z: () => -10.8, c: '#0e9f9f' },
+    { x: () => 18.6, z: () => 0, c: '#2e9e5b' },
+    { x: () => 23.4, z: () => 0, c: '#2e9e5b' },
+    { x: () => 31.5, z: () => 0, c: '#3f7fd9' },
+    { x: () => 37.4, z: () => -1.2, c: '#d9822b' },
+    { x: () => 31.5, z: () => 6.4, c: '#8b5cf6' },
+    ...SCHOOL_ROOMS.map(r => ({ x: () => r.cx, z: () => -5, c: r.color }))
+  ];
+  function drawMap(t) {
+    const c = mapCtx;
+    c.clearRect(0, 0, 120, 120);
+    const rect = (x1, z1, x2, z2, fill) => {
+      const [ax, az] = W2M(x1, z1);
+      const [bx, bz] = W2M(x2, z2);
+      c.fillStyle = fill;
+      c.fillRect(Math.min(ax, bx), Math.min(az, bz), Math.abs(bx - ax), Math.abs(bz - az));
+    };
+    const dot = (x, z, col, r) => {
+      const [mx, mz] = W2M(x, z);
+      c.fillStyle = col;
+      c.beginPath();
+      c.arc(mx, mz, r, 0, Math.PI * 2);
+      c.fill();
+    };
+    rect(16.8, -8.8, 41.4, 8.8, '#2e5b3a');
+    rect(-16.5, -8.3, 16.5, 2.3, '#3c4148');
+    rect(6.0, 2.3, 16.3, 8.3, '#453522');
+    rect(-14, 2.3, -4, 8.3, '#4a3f28');
+    rect(-4, 2.3, 6.15, 8.3, '#2f3a45');
+    rect(-1, -13.5, 6, -8.3, '#1f4a3a');
+    for (const d of mapDots) dot(d.x(), d.z(), d.c, 2.4);
+    for (const tm of trashMeshes) dot(tm.mesh.position.x, tm.mesh.position.z, '#9aa0a6', 1.4);
+    GARDEN_BEDS.forEach((b, i) => {
+      if (!prog.kebun.includes(i)) dot(b.x, b.z, '#3fae5f', 2 + Math.sin(t / 240) * 0.8);
+    });
+    if (prog.carry) {
+      let tx = 0;
+      let tz = 0;
+      if (prog.carry.target === 'lib') {
+        tx = -8.6;
+        tz = 4.2;
+      } else {
+        const tr = SCHOOL_ROOMS.find(r => r.id === prog.carry.target);
+        if (tr) {
+          tx = tr.cx;
+          tz = -5;
+        }
+      }
+      c.globalAlpha = 0.55 + Math.sin(t / 160) * 0.45;
+      dot(tx, tz, '#e5484d', 4);
+      c.globalAlpha = 1;
+    }
+    const [px, pz] = W2M(player.position.x, player.position.z);
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(px, pz);
+    c.lineTo(px + Math.sin(player.rotation.y) * 8, pz + Math.cos(player.rotation.y) * 8);
+    c.stroke();
+    dot(player.position.x, player.position.z, '#ffffff', 3.2);
+  }
 
   const A = typeof window !== 'undefined' ? window.anime : null;
   const popIn = el => {
@@ -1484,6 +1600,11 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     }
+    mapTick += dt;
+    if (mapTick > 0.15) {
+      mapTick = 0;
+      drawMap(t);
+    }
 
     let jx = joy.x;
     let jy = joy.y;
@@ -1565,6 +1686,29 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     }
 
     if (!dialogOpen) {
+      for (const st of stars) {
+        st.mesh.rotation.y += dt * 2.2;
+        st.mesh.position.y = 0.55 + Math.sin(t / 350 + st.i) * 0.08;
+      }
+      for (let i = stars.length - 1; i >= 0; i--) {
+        const st = stars[i];
+        if (Math.hypot(player.position.x - st.mesh.position.x, player.position.z - st.mesh.position.z) < 0.65) {
+          scene.remove(st.mesh);
+          stars.splice(i, 1);
+          prog.stars.push(st.i);
+          sfx.coin();
+          buzz(20);
+          if (prog.stars.length === STAR_POS.length) {
+            prog.done.stars = true;
+            addXp(15);
+            toast('Semua bintang terkumpul! Bonus +15 XP');
+            checkAllDone();
+          } else {
+            addXp(3);
+            toast(`Bintang terkumpul +3 XP (${prog.stars.length}/${STAR_POS.length})`);
+          }
+        }
+      }
       for (const tm of trashMeshes) tm.mesh.rotation.y += dt * 1.4;
       for (let i = trashMeshes.length - 1; i >= 0; i--) {
         const tm = trashMeshes[i];
@@ -1670,11 +1814,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   }
 
   let phase = 0;
+  let mapTick = 0;
   const npcList = [buKantin, pakTono, buRina];
   SCHOOL_ROOMS.forEach((r, i) => {
     const tm = scene.children.find(o => o.isGroup && Math.abs(o.position.x - r.cx) < 0.01 && Math.abs(o.position.z + 6.8) < 0.01);
     if (tm) {
       tm.userData.phase = i * 1.7;
+      tm.add(nameTag(r.teacher, r.color));
+      tm.children[tm.children.length - 1].position.y = 2.25;
       npcList.push(tm);
     }
   });
