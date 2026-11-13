@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SMP ABBS Surakarta — Kustomisasi Karakter</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="./vendor/anime.min.js"></script>
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="brand">
+        <h1>SMP ABBS <b>Surakarta</b></h1>
+        <small>RPG Edukatif</small>
+      </div>
+      <div id="nameWrap">
+        <label for="nameInput">Nama</label>
+        <input id="nameInput" maxlength="24" placeholder="Namamu..." autocomplete="off">
+      </div>
+    </header>
+    <main>
+      <aside id="panel">
+        <div id="genderSeg">
+          <button data-gender="putra">Putra</button>
+          <button data-gender="putri">Putri</button>
+        </div>
+        <nav id="tabs"></nav>
+        <div id="panelBody"></div>
+        <div id="actions">
+          <button id="btnRandom" type="button">Acak</button>
+          <button id="btnReset" type="button">Reset</button>
+          <button id="btnSchool" type="button">Masuk Sekolah</button>
+          <button id="btnSave" type="button">Simpan &amp; Mulai</button>
+        </div>
+      </aside>
+      <section id="stage">
+        <canvas id="scene"></canvas>
+        <div id="hint">Geser untuk memutar karakter</div>
+      </section>
+    </main>
+  </div>
+  <div id="welcome" hidden>
+    <div class="card">
+      <h2>Profil Tersimpan!</h2>
+      <p id="welcomeText"></p>
+      <div class="btn-row">
+        <button id="btnEdit" type="button">Edit Lagi</button>
+        <button id="btnEnter" type="button" class="primary">Masuk Sekolah</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast"></div>
+  <div id="webglError" hidden>Perangkat tidak mendukung WebGL, kustomisasi tidak dapat ditampilkan.</div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
