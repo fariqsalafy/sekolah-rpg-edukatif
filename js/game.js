@@ -42,7 +42,9 @@ const SPORTS = [
 export const QUESTS = [
   { id: 'q1', xp: 15, giver: 'kantin', item: 'Paket jajanan', target: 'mtk', targetLabel: 'Pak Ahmad — Kelas Matematika' },
   { id: 'q2', xp: 15, giver: 'mtk', item: 'Spidol untuk Ibu Sari', target: 'ipa', targetLabel: 'Ibu Sari — Kelas IPA' },
-  { id: 'q3', xp: 20, giver: 'ipa', item: 'Buku perpustakaan', target: 'bing', targetLabel: 'Pak Rizal — Kelas B. Inggris' }
+  { id: 'q3', xp: 20, giver: 'ipa', item: 'Buku perpustakaan', target: 'bing', targetLabel: 'Pak Rizal — Kelas B. Inggris' },
+  { id: 'q4', xp: 15, giver: 'pai', item: 'Pengingat shalat', target: 'mus', targetLabel: 'Mushola' },
+  { id: 'q5', xp: 15, giver: 'bindo', item: 'Surat untuk Bu Kantin', target: 'kantin', targetLabel: 'Kantin — Bu Kantin' }
 ];
 
 export const LIB = {
@@ -903,6 +905,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       if (prog.carry.target === 'lib') {
         tx = -8.6;
         tz = 4.2;
+      } else if (prog.carry.target === 'mus') {
+        tx = 2.5;
+        tz = -10.8;
+      } else if (prog.carry.target === 'kantin') {
+        tx = 11.15;
+        tz = 5.3;
       } else {
         const tr = SCHOOL_ROOMS.find(r => r.id === prog.carry.target);
         if (tr) {
@@ -1203,8 +1211,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     dlgEl.hidden = false;
     popIn(dlgEl);
   }
-
-  function deliverQuest(room) {    const c = prog.carry;
+  function deliverQuest(zone) {
+    const c = prog.carry;
     const q = QUESTS.find(x => x.id === c.id);
     prog.quests[q.id] = 'done';
     prog.carry = null;
@@ -1214,16 +1222,17 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     checkAllDone();
     sfx.quest();
     buzz([60, 40, 60]);
+    const isRoom = SCHOOL_ROOMS.some(r => r.id === zone.id);
     dialogOpen = true;
     setHead('#c9a86a', 'Tugas Selesai');
     dlgBody.innerHTML = `<p>${q.item} sudah disampaikan ke <b>${q.targetLabel}</b>.</p><p>Kamu mendapat <b>+${q.xp} XP</b>. Terima kasih sudah membantu!</p>`;
     dlgActions.innerHTML = '';
     const bNext = document.createElement('button');
     bNext.className = 'primary';
-    bNext.textContent = 'Lanjut Pelajaran';
+    bNext.textContent = isRoom ? 'Lanjut Pelajaran' : 'Lanjut Bermain';
     bNext.onclick = () => {
       closeDlg();
-      openLesson(room);
+      if (isRoom) openLesson(zone);
     };
     const bOut = document.createElement('button');
     bOut.textContent = 'Keluar';
@@ -1923,6 +1932,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       currentRoom = null;
       visitOpened = false;
       if (dialogOpen && !canteenItem) closeDlg();
+    }
+
+    if (prog.carry && prog.carry.target !== 'lib') {
+      const zoneIa = interactables.find(ia => ia.id === prog.carry.target);
+      if (zoneIa && Math.hypot(player.position.x - zoneIa.x, player.position.z - zoneIa.z) < zoneIa.r * 0.9) {
+        deliverQuest(zoneIa);
+      }
     }
 
     for (const ia of interactables) {

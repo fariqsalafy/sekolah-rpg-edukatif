@@ -75,8 +75,9 @@ try {
       }
     }
     const roomIds = new Set(school.SCHOOL_ROOMS.map(r => r.id));
+    const zoneTargets = new Set(['lib', 'mus', 'kantin']);
     for (const q of gameMod.QUESTS) {
-      if (!roomIds.has(q.target) && q.target !== 'lib') throw new Error(`target quest tidak valid: ${q.id} -> ${q.target}`);
+      if (!roomIds.has(q.target) && !zoneTargets.has(q.target)) throw new Error(`target quest tidak valid: ${q.id} -> ${q.target}`);
       if (q.giver !== 'kantin' && !roomIds.has(q.giver)) throw new Error(`giver quest tidak valid: ${q.id}`);
     }
     if (new Set(gameMod.WUDHU_STEPS).size !== 5) throw new Error('langkah wudhu tidak lengkap');
