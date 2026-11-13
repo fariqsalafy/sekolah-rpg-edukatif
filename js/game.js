@@ -1101,6 +1101,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let powerTimer = null;
   let landTimer = null;
   let shot = null;
+  let mathXpLeft = 10;
 
   function closeDlg() {
     clearTimeout(answerTimer);
@@ -1358,6 +1359,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       bQ.onclick = () => acceptQuest(qg);
       dlgActions.append(bQ);
     }
+    const bMath = document.createElement('button');
+    bMath.textContent = 'Latihan Hitung Cepat';
+    bMath.onclick = openMathDash;
+    dlgActions.append(bMath);
     const bTop = document.createElement('button');
     bTop.textContent = `Isi Saldo ${fmt(10000)}`;
     bTop.onclick = () => {
@@ -1408,12 +1413,96 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       renderCanteen();
     } else {
       sfx.wrong();
-      const err = document.createElement('p');
-      err.className = 'g-err';
-      err.textContent = `Saldo kurang! Butuh ${fmt(total)}, saldo ${fmt(prog.uang)}.`;
-      dlgBody.appendChild(err);
+      const old = dlgBody.querySelector('.g-err');
+      if (old) old.remove();
+      const errEl = document.createElement('p');
+      errEl.textContent = `Saldo kurang! Butuh ${fmt(total)}, saldo ${fmt(prog.uang)}.`;
+      errEl.className = 'g-err';
+      dlgBody.appendChild(errEl);
       shake(dlgBody);
     }
+  }
+
+  function openMathDash() {
+    dialogOpen = true;
+    canteenItem = null;
+    setHead('#c96f2e', 'Latihan Hitung Cepat');
+    let streak = 0;
+    const mkQ = () => {
+      const op = ['+', '-', 'x'][Math.floor(Math.random() * 3)];
+      let a, b, ans;
+      if (op === 'x') {
+        a = 2 + Math.floor(Math.random() * 8);
+        b = 2 + Math.floor(Math.random() * 9);
+        ans = a * b;
+      } else if (op === '+') {
+        a = 10 + Math.floor(Math.random() * 40);
+        b = 5 + Math.floor(Math.random() * 40);
+        ans = a + b;
+      } else {
+        a = 20 + Math.floor(Math.random() * 40);
+        b = 2 + Math.floor(Math.random() * 18);
+        ans = a - b;
+      }
+      const opts = new Set([ans]);
+      while (opts.size < 3) {
+        const d = Math.floor(Math.random() * 11) - 5;
+        if (d) opts.add(ans + d);
+      }
+      return { text: `${a} ${op} ${b}`, opts: [...opts].sort(() => Math.random() - 0.5), ans };
+    };
+    const renderQ = () => {
+      const q = mkQ();
+      dlgBody.innerHTML = `<p>Jawab: <b>${q.text}</b> = ?</p>`;
+      if (streak >= 2) {
+        const sp = document.createElement('p');
+        sp.innerHTML = `<b>Streak:</b> ${streak} benar berturut-turut`;
+        dlgBody.appendChild(sp);
+      }
+      if (mathXpLeft <= 0) {
+        const cp = document.createElement('p');
+        cp.textContent = 'XP latihan sesi ini sudah habis — tetap jawab untuk poin streak!';
+        dlgBody.appendChild(cp);
+      }
+      q.opts.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = 'g-opt';
+        b.textContent = opt;
+        b.onclick = () => {
+          const btns = [...dlgBody.querySelectorAll('.g-opt')];
+          btns.forEach(x => { x.disabled = true; });
+          const ci = q.opts.indexOf(q.ans);
+          if (opt === q.ans) {
+            b.classList.add('correct');
+            pulse(b);
+            sfx.correct();
+            buzz(30);
+            streak += 1;
+            if (mathXpLeft > 0) {
+              mathXpLeft -= 2;
+              addXp(2);
+            }
+            answerTimer = setTimeout(renderQ, 650);
+          } else {
+            if (btns[ci]) btns[ci].classList.add('correct');
+            b.classList.add('wrong');
+            shake(b);
+            sfx.wrong();
+            streak = 0;
+            answerTimer = setTimeout(renderQ, 1200);
+          }
+        };
+        dlgBody.appendChild(b);
+      });
+      dlgActions.innerHTML = '';
+      const bOut = document.createElement('button');
+      bOut.textContent = 'Keluar';
+      bOut.onclick = closeDlg;
+      dlgActions.append(bOut);
+      dlgEl.hidden = false;
+    };
+    renderQ();
+    popIn(dlgEl);
   }
 
   function waterBed(i, p, silent) {
