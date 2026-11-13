@@ -652,6 +652,15 @@ body.in-game #stage { height: 100dvh; }
   cursor: pointer;
 }
 
+.g-zoom button#gSnd {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.g-zoom button#gSnd.off {
+  opacity: 0.45;
+}
+
 .g-zoom button:active {
   background: var(--blue);
   border-color: var(--blue);

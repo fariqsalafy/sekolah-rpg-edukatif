@@ -113,6 +113,65 @@ function lerpAngle(a, b, t) {
   return a + d * t;
 }
 
+let audioCtx = null;
+let soundOn = true;
+
+function tone(freq, dur, delay = 0, type = 'square', vol = 0.06) {
+  if (!soundOn || !audioCtx) return;
+  try {
+    const t0 = audioCtx.currentTime + delay;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.02);
+  } catch (e) {}
+}
+
+function ensureAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    return;
+  }
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return;
+  try {
+    audioCtx = new C();
+  } catch (e) {}
+}
+
+const sfx = {
+  correct() {
+    tone(660, 0.1);
+    tone(880, 0.16, 0.09);
+  },
+  wrong() {
+    tone(190, 0.14, 0, 'sawtooth', 0.05);
+    tone(150, 0.2, 0.12, 'sawtooth', 0.05);
+  },
+  pick() {
+    tone(520, 0.07, 0, 'triangle', 0.08);
+    tone(780, 0.1, 0.06, 'triangle', 0.08);
+  },
+  quest() {
+    tone(523, 0.1);
+    tone(659, 0.1, 0.1);
+    tone(784, 0.22, 0.2);
+  },
+  coin() {
+    tone(988, 0.06, 0, 'triangle', 0.07);
+    tone(1319, 0.12, 0.05, 'triangle', 0.07);
+  }
+};
+
+const buzz = ms => {
+  if (navigator.vibrate) navigator.vibrate(ms);
+};
+
 function fmt(n) {
   return 'Rp' + n.toLocaleString('id-ID');
 }
@@ -666,6 +725,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     <div class="g-zoom">
       <button id="gZoomIn" type="button">+</button>
       <button id="gZoomOut" type="button">−</button>
+      <button id="gSnd" type="button">SFX</button>
     </div>
     <div class="g-hint" id="gHint">Geser: kamera · Pinch / tombol: zoom</div>
     <div id="gDlg" hidden>
@@ -739,10 +799,21 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   };
   hud.querySelector('#gZoomIn').addEventListener('click', () => zoomBy(-1.4));
   hud.querySelector('#gZoomOut').addEventListener('click', () => zoomBy(1.4));
+  const sndBtn = hud.querySelector('#gSnd');
+  sndBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    sndBtn.classList.toggle('off', !soundOn);
+    if (soundOn) {
+      ensureAudio();
+      sfx.pick();
+    }
+    toast(soundOn ? 'Efek suara: aktif' : 'Efek suara: mati');
+  });
 
   const camPointers = new Map();
   let pinchDist = 0;
   const camDown = e => {
+    ensureAudio();
     camPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     canvas.setPointerCapture(e.pointerId);
     if (camPointers.size === 2) {
@@ -779,6 +850,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
   };
   const joyDown = e => {
+    ensureAudio();
     joy.id = e.pointerId;
     joyEl.setPointerCapture(e.pointerId);
     joyMove(e);
@@ -808,6 +880,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   const keys = {};
   const keyDown = e => {
+    ensureAudio();
     const k = e.key.toLowerCase();
     keys[k] = true;
     if (k.startsWith('arrow')) e.preventDefault();
@@ -884,6 +957,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     saveProgress(prog);
     updateHint();
     closeDlg();
+    sfx.coin();
+    buzz(30);
     toast(`Tugas diterima: bawa ${q.item}`);
   }
 
@@ -896,6 +971,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     updateHint();
     updateHud();
     checkAllDone();
+    sfx.quest();
+    buzz([60, 40, 60]);
     dialogOpen = true;
     setHead('#c9a86a', 'Tugas Selesai');
     dlgBody.innerHTML = `<p>${q.item} sudah disampaikan ke <b>${q.targetLabel}</b>.</p><p>Kamu mendapat <b>+${q.xp} XP</b>. Terima kasih sudah membantu!</p>`;
@@ -1055,10 +1132,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     if (prog.uang >= total) {
       prog.uang -= total;
       saveProgress(prog);
+      sfx.coin();
+      buzz(25);
       toast(`${item.name} x${qty} = ${fmt(total)} dibayar. Sisa saldo ${fmt(prog.uang)}`);
       setHead('#c96f2e', 'KANTIN — Bu Kantin');
       renderCanteen();
     } else {
+      sfx.wrong();
       const err = document.createElement('p');
       err.className = 'g-err';
       err.textContent = `Saldo kurang! Butuh ${fmt(total)}, saldo ${fmt(prog.uang)}.`;
@@ -1097,6 +1177,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
             const note = document.createElement('p');
             note.innerHTML = '<b>Wudhu selesai!</b> Wudhu dimulai dengan niat, lalu membasuh anggota wudhu secara berurutan. Setelah itu kita siap shalat.';
             dlgBody.appendChild(note);
+            sfx.quest();
+            buzz([60, 40, 60]);
             if (!prog.done.mus) {
               prog.done.mus = true;
               setSignDone(ENT_MUS);
@@ -1155,10 +1237,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       bOut.onclick = closeDlg;
       dlgActions.append(bClr, bOut);
     };
-    const mark = k => {
-      if (prog.lab[k]) return;
-      prog.lab[k] = true;
-      saveProgress(prog);
+      const mark = k => {
+        if (prog.lab[k]) return;
+        prog.lab[k] = true;
+        saveProgress(prog);
+        sfx.correct();
+        buzz(40);
       if (prog.lab.ac && prog.lab.bc && prog.lab.ab && !prog.done.lab) {
         prog.done.lab = true;
         setSignDone(ENT_LAB);
@@ -1270,10 +1354,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       btn.classList.add('correct');
       if (!entWasDone) quizXp += 10;
       pulse(btn);
+      sfx.correct();
+      buzz(40);
     } else {
       btn.classList.add('wrong');
       buttons[correct].classList.add('correct');
       shake(btn);
+      sfx.wrong();
+      buzz([40, 50, 40]);
     }
     answerTimer = setTimeout(() => {
       quizIdx += 1;
@@ -1291,6 +1379,11 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       updateHud();
       checkAllDone();
     }
+    if (!entWasDone) {
+      sfx.quest();
+      buzz([60, 40, 60]);
+      bumpXp();
+    }
     dialogOpen = true;
     setHead(ent.color, `${ent.label} — Selesai`);
     dlgBody.innerHTML = entWasDone
@@ -1304,7 +1397,6 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     dlgActions.append(bOk);
     dlgEl.hidden = false;
     popIn(dlgEl);
-    if (!entWasDone) bumpXp();
   }
 
   function setSignDone(room) {
@@ -1451,6 +1543,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         const s0 = shot;
         shot = null;
         if (s0.hit) {
+          sfx.quest();
+          buzz([60, 40, 60]);
           if (!prog.done[s0.id]) {
             prog.done[s0.id] = true;
             addXp(10);
@@ -1460,6 +1554,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
             toast('Masuk lagi! (XP sudah pernah diambil)');
           }
         } else {
+          sfx.wrong();
           toast('Meleset! Coba lagi.');
         }
         landTimer = setTimeout(() => {
@@ -1477,6 +1572,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
           scene.remove(tm.mesh);
           trashMeshes.splice(i, 1);
           prog.trash.push(tm.i);
+          sfx.pick();
+          buzz(25);
           if (prog.trash.length === TRASH_POS.length) {
             prog.done.trash = true;
             addXp(20);
@@ -1493,10 +1590,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
           prog.kebun.push(i);
           waterBed(i, bedPlant[i], false);
           saveProgress(prog);
+          sfx.pick();
+          buzz(25);
           if (prog.kebun.length === GARDEN_BEDS.length) {
             prog.done.kebun = true;
             setSignDone(ENT_KEBUN);
             addXp(10);
+            sfx.quest();
+            buzz([60, 40, 60]);
             toast('Kebun sekolah terawat! +10 XP');
             checkAllDone();
           } else {
