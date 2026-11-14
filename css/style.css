@@ -876,3 +876,5 @@ body.in-game #stage { height: 100dvh; }
   z-index: 60;
   pointer-events: none;
 }
+
+#gClock { opacity: 0.8; font-weight: 600; }

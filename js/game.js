@@ -74,6 +74,10 @@ export const STAR_POS = [
   [-19.5, 4.2], [-17, -12.5], [8.5, -12], [17.6, 5.5], [39.8, 2.8], [-9, 9.2]
 ];
 
+export const HUNT_POS = [
+  [-23.5, 10.5], [19.3, -7.8], [43.3, 7.8], [44.5, -7.5], [5.5, 12.5]
+];
+
 export const GARDEN_BEDS = [
   { x: -12, z: -10.5 }, { x: -9, z: -10.5 }, { x: -6, z: -10.5 }
 ];
@@ -84,7 +88,7 @@ export const LAB_LIQUIDS = {
   C: { name: 'Indikator (C)', color: '#8b5cf6' }
 };
 
-const EXTRA_DONE = ['lib', 'bball', 'fb', 'mus', 'kebun', 'lab', 'trash', 'stars'];
+const EXTRA_DONE = ['lib', 'bball', 'fb', 'mus', 'kebun', 'lab', 'trash', 'stars', 'sbplay', 'vbplay', 'btplay', 'hunt'];
 
 const TIPS = {
   mtk: ['Latihan perkalian 10 menit setiap hari membuat hitunganmu makin cepat.', 'Pecahan: 1/2 = 0,5 artinya separuh dari keseluruhan.', 'Pembagian adalah kebalikan dari perkalian.'],
@@ -207,11 +211,12 @@ function loadProgress() {
       lab: p.lab && typeof p.lab === 'object' ? p.lab : {},
       quests: p.quests && typeof p.quests === 'object' ? p.quests : {},
       stars: Array.isArray(p.stars) ? p.stars : [],
+      hunt: Array.isArray(p.hunt) ? p.hunt : [],
       playMs: p.playMs || 0,
       carry: p.carry && typeof p.carry === 'object' ? p.carry : null
     };
   } catch (e) {
-    return { xp: 0, done: {}, notified: false, uang: 10000, rank: 0, trash: [], kebun: [], lab: {}, quests: {}, stars: [], playMs: 0, carry: null };
+    return { xp: 0, done: {}, notified: false, uang: 10000, rank: 0, trash: [], kebun: [], lab: {}, quests: {}, stars: [], hunt: [], playMs: 0, carry: null };
   }
 }
 
@@ -353,9 +358,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   scene.background = new THREE.Color('#202326');
   scene.fog = new THREE.Fog('#202326', 36, 70);
 
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 120);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
 
-  scene.add(new THREE.HemisphereLight('#ffffff', '#43474d', 0.75));
+  const hemi = new THREE.HemisphereLight('#ffffff', '#43474d', 0.75);
+  scene.add(hemi);
   const dir = new THREE.DirectionalLight('#ffffff', 0.85);
   dir.position.set(10, 14, 6);
   dir.castShadow = true;
@@ -367,6 +373,19 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   dir.shadow.camera.near = 0.5;
   dir.shadow.camera.far = 60;
   scene.add(dir);
+
+  const SKY = {
+    night: new THREE.Color('#12151d'),
+    dusk: new THREE.Color('#e8935f'),
+    day: new THREE.Color('#a8d4ff'),
+    sunLow: new THREE.Color('#ffb37a'),
+    sunDay: new THREE.Color('#ffffff'),
+    moon: new THREE.Color('#8899cc')
+  };
+  const sun = place(mesh(new THREE.SphereGeometry(2.6, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffd75e', fog: false })), 12, 55, -30);
+  scene.add(sun);
+  const moon = place(mesh(new THREE.SphereGeometry(1.9, 16, 12), new THREE.MeshBasicMaterial({ color: '#dfe6ff', fog: false })), -58, 55, -30);
+  scene.add(moon);
 
   const wallMat = mat('#565b61');
   const floorMat = mat('#43484e', { roughness: 1 });
@@ -571,7 +590,9 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   for (const s of [-1, 1]) scene.add(place(box(0.12, 2.2, 0.12, whiteMat), 31.5, 1.1, s * 2.1));
   scene.add(place(box(0.05, 1.0, 4.2, mat('#ffffff', { transparent: true, opacity: 0.4 })), 31.5, 1.55, 0));
-  scene.add(place(mesh(new THREE.SphereGeometry(0.2, 14, 12), whiteMat), 30.2, 0.2, 1.0));
+  const volleyBall = place(mesh(new THREE.SphereGeometry(0.2, 14, 12), mat('#3f7fd9')), 30.2, 0.2, 1.0);
+  scene.add(volleyBall);
+  volleyBall.userData.home = volleyBall.position.clone();
 
   scene.add(place(box(0.16, 2.9, 0.16, darkMat), 39.6, 1.45, -1.2));
   scene.add(place(box(0.08, 1.0, 1.6, boardMat), 39.42, 2.55, -1.2));
@@ -582,7 +603,9 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   for (const s of [-1, 1]) scene.add(place(box(0.1, 1.5, 0.1, whiteMat), 31.5 + s * 2.3, 0.75, 6.4));
   scene.add(place(box(4.6, 0.7, 0.04, mat('#ffffff', { transparent: true, opacity: 0.4 })), 31.5, 1.05, 6.4));
-  scene.add(place(mesh(new THREE.ConeGeometry(0.09, 0.16, 10), whiteMat), 30.6, 0.1, 5.8));
+  const shuttle = place(mesh(new THREE.ConeGeometry(0.09, 0.16, 10), whiteMat), 30.6, 0.1, 5.8);
+  scene.add(shuttle);
+  shuttle.userData.home = shuttle.position.clone();
 
   const fenceXs = [17.3, 21.8, 26.3, 30.8, 35.3, 39.8];
   for (const sz of [8.8, -8.8]) {
@@ -599,7 +622,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   scene.add(place(box(0.9, 0.24, 0.04, mat('#d43b3b')), -18.06, 2.95, -3));
   scene.add(place(box(0.9, 0.24, 0.04, mat('#f4f4f2')), -18.06, 2.71, -3));
 
-  const ground = mesh(new THREE.PlaneGeometry(78, 34), mat('#3a3e43', { roughness: 1 }));
+  const ground = mesh(new THREE.PlaneGeometry(300, 300), mat('#4b7f46', { roughness: 1 }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(12, -0.02, -3);
   ground.receiveShadow = true;
@@ -620,6 +643,11 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   tree(-3.4, -13.0);
   tree(17.9, -6.9, 0.85);
   tree(42.0, 6.9, 0.9);
+  for (const [tx, tz, ts] of [[-30, 0, 1.1], [-28, 11], [-29, -13], [-14, -19], [2, -19.5], [16, -18], [26, -16], [36, -16], [46, -14], [49, -2], [47, 12], [34, 14], [18, 14], [-6, 16], [-20, 16], [56, 4, 1.15], [56, -10], [-36, 6, 1.1], [-36, -6], [44, 20]]) tree(tx, tz, ts || 1);
+  for (const [rx, rz] of [[-26, -7], [-24, 8], [10, 16], [30, 18], [50, -8], [52, 8], [-32, -16], [40, -19]]) {
+    scene.add(place(box(0.8, 0.5, 0.7, mat('#7a7f85')), rx, 0.25, rz, [0, rx, 0]));
+    addCollider(rx - 0.4, rx + 0.4, rz - 0.35, rz + 0.35);
+  }
 
   for (const bz of [-3.4, 3.4]) {
     addSolid(1.9, 0.45, 0.6, -19.6, 0.225, bz, mat('#4a3423'), true, true);
@@ -733,6 +761,15 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     stars.push({ mesh: s, i });
   });
 
+  const huntMeshes = [];
+  const huntMat = mat('#ffb347', { emissive: new THREE.Color('#8a5a00'), emissiveIntensity: 0.4 });
+  HUNT_POS.forEach(([hx, hz], i) => {
+    const b = box(0.42, 0.3, 0.1, huntMat);
+    place(b, hx, 0.6, hz, [0, i * 0.8, 0]);
+    scene.add(b);
+    huntMeshes.push({ mesh: b, i });
+  });
+
   for (const room of SCHOOL_ROOMS) {
     const cx = ROOM_CX[SCHOOL_ROOMS.indexOf(room)];
     const colorMat = mat(room.color);
@@ -819,7 +856,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   hud.innerHTML = `
     <div class="g-top">
       <button id="gBack" type="button">Edit Karakter</button>
-      <div class="g-mid"><b id="gName"></b><span id="gProg"></span></div>
+      <div class="g-mid"><b id="gName"></b><span id="gProg"></span><span id="gClock"></span></div>
       <div class="g-xp" id="gXp">XP 0</div>
     </div>
     <canvas id="gMap" width="120" height="120"></canvas>
@@ -857,6 +894,41 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   };
   updateHud();
   hud.querySelector('#gXp').addEventListener('click', openObjectives);
+  const clockEl = hud.querySelector('#gClock');
+
+  let skySec = -1;
+  function updateSky() {
+    const now = new Date();
+    const sec = now.getSeconds() + now.getMinutes() * 60;
+    if (sec === skySec) return;
+    skySec = sec;
+    const h = now.getHours() + now.getMinutes() / 60;
+    const a = (h - 6) / 24 * Math.PI * 2;
+    const elev = Math.sin(a);
+    const dayF = Math.min(1, Math.max(0, (elev + 0.18) / 0.42));
+    const t1 = Math.min(1, dayF * 2);
+    const t2 = Math.max(0, dayF * 2 - 1);
+    const bg = SKY.night.clone().lerp(SKY.dusk, t1).lerp(SKY.day, t2);
+    scene.background = bg;
+    scene.fog.color.copy(bg);
+    sun.position.set(12 + Math.cos(a) * 70, Math.sin(a) * 55, -30);
+    sun.visible = elev > -0.12;
+    moon.position.set(12 - Math.cos(a) * 70, -Math.sin(a) * 55, -30);
+    moon.visible = elev < 0.12;
+    if (dayF > 0) {
+      dir.color.copy(SKY.sunLow).lerp(SKY.sunDay, t2);
+      dir.intensity = 0.2 + dayF * 0.65;
+      dir.position.set(Math.cos(a) * 18, Math.max(7, Math.sin(a) * 18), -8);
+    } else {
+      dir.color.copy(SKY.moon);
+      dir.intensity = 0.14;
+      dir.position.set(8, 14, 6);
+    }
+    hemi.intensity = 0.26 + dayF * 0.5;
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    clockEl.textContent = `${elev > 0.35 ? '☀️' : elev > 0 ? '🌇' : '🌙'} ${hh}:${mm}`;
+  }
 
   const hintEl = hud.querySelector('#gHint');
   const updateHint = () => {
@@ -908,6 +980,11 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     GARDEN_BEDS.forEach((b, i) => {
       if (!prog.kebun.includes(i)) dot(b.x, b.z, '#3fae5f', 2 + Math.sin(t / 240) * 0.8);
     });
+    if (!prog.done.hunt) {
+      c.globalAlpha = 0.55 + Math.sin(t / 240) * 0.45;
+      for (const hm of huntMeshes) dot(hm.mesh.position.x, hm.mesh.position.z, '#ffb347', 2.2);
+      c.globalAlpha = 1;
+    }
     if (prog.carry) {
       let tx = 0;
       let tz = 0;
@@ -968,15 +1045,15 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let camDist = 7.5;
   let camRatio = 0.55;
   const CAM_MIN = 3.0;
-  const CAM_MAX = 16.5;
+  const CAM_MAX = 34;
   const RATIO_MIN = 0.35;
   const RATIO_MAX = 1.0;
   const zoomBy = d => {
     camDist = Math.min(CAM_MAX, Math.max(CAM_MIN, camDist + d));
     pulse(d < 0 ? hud.querySelector('#gZoomIn') : hud.querySelector('#gZoomOut'));
   };
-  hud.querySelector('#gZoomIn').addEventListener('click', () => zoomBy(-1.4));
-  hud.querySelector('#gZoomOut').addEventListener('click', () => zoomBy(1.4));
+  hud.querySelector('#gZoomIn').addEventListener('click', () => zoomBy(-2.2));
+  hud.querySelector('#gZoomOut').addEventListener('click', () => zoomBy(2.2));
   const sndBtn = hud.querySelector('#gSnd');
   sndBtn.classList.toggle('off', !soundOn);
   sndBtn.addEventListener('click', () => {
@@ -1102,6 +1179,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let landTimer = null;
   let shot = null;
   let mathXpLeft = 10;
+  let sbGolCd = false;
 
   function closeDlg() {
     clearTimeout(answerTimer);
@@ -1192,7 +1270,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     const parts = [];
     for (const r of SCHOOL_ROOMS) parts.push(line(!!prog.done[r.id], `${r.label} — ${r.teacher}`));
     for (const s of SPORTS) parts.push(line(!!prog.done[s.id], `Olahraga ${s.label}`));
-    for (const [id, txt] of [['lib', 'Perpustakaan'], ['lab', 'Lab IPA'], ['mus', 'Wudhu di Mushola'], ['kebun', 'Menyiram Kebun'], ['bball', 'Mini-game Basket'], ['fb', 'Penalti'], ['trash', `Bersih-bersih (${prog.trash.length}/12)`], ['stars', `Bintang (${prog.stars.length}/6)`]]) {
+    for (const [id, txt] of [['lib', 'Perpustakaan'], ['lab', 'Lab IPA'], ['mus', 'Wudhu di Mushola'], ['kebun', 'Menyiram Kebun'], ['bball', 'Mini-game Basket'], ['fb', 'Penalti'], ['sbplay', 'Giring bola ke gawang'], ['vbplay', 'Passing voli 5x'], ['btplay', 'Smash bulu tangkis 3x'], ['hunt', `Misi buku hilang (${prog.hunt.length}/${HUNT_POS.length})`], ['trash', `Bersih-bersih (${prog.trash.length}/12)`], ['stars', `Bintang (${prog.stars.length}/6)`]]) {
       parts.push(line(!!prog.done[id], txt));
     }
     for (const q of QUESTS) parts.push(line(prog.quests[q.id] === 'done', `Tugas: ${q.item}`));
@@ -1299,7 +1377,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     dialogOpen = true;
     canteenItem = null;
     setHead('#2e9e5b', 'PJOK — Pak Tono');
-    dlgBody.innerHTML = '<p>Selamat berolahraga! Dekati empat area: Sepak Bola, Voli, Basket, dan Bulu Tangkis. Ada juga mini-game lempar basket & penalti, plus kebun sekolah yang perlu disiram. Fakta seru + pertanyaan menantimu!</p>';
+    dlgBody.innerHTML = '<p>Selamat berolahraga! Dekati empat area: Sepak Bola, Voli, Basket, dan Bulu Tangkis. Ada mini-game lempar basket, penalti, giring bola ke gawang, passing voli, smash bulu tangkis, plus kebun sekolah yang perlu disiram. Fakta seru + pertanyaan menantimu!</p>';
     dlgActions.innerHTML = '';
     const bOk = document.createElement('button');
     bOk.className = 'primary';
@@ -1590,10 +1668,16 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         mix = '';
         renderLab('Labu dikosongkan. Coba kombinasi lain!');
       };
+      const bEl = document.createElement('button');
+      bEl.textContent = '⚡ Eksperimen Listrik';
+      bEl.onclick = openLabElec;
+      const bMg = document.createElement('button');
+      bMg.textContent = '🧲 Eksperimen Magnet';
+      bMg.onclick = openLabMag;
       const bOut = document.createElement('button');
       bOut.textContent = 'Keluar';
       bOut.onclick = closeDlg;
-      dlgActions.append(bClr, bOut);
+      dlgActions.append(bClr, bEl, bMg, bOut);
     };
       const mark = k => {
         if (prog.lab[k]) return;
@@ -1601,14 +1685,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         saveProgress(prog);
         sfx.correct();
         buzz(40);
-      if (prog.lab.ac && prog.lab.bc && prog.lab.ab && !prog.done.lab) {
-        prog.done.lab = true;
-        setSignDone(ENT_LAB);
-        addXp(10);
-        checkAllDone();
-        toast('Semua eksperimen selesai! +10 XP');
-      }
-    };
+        labCheckDone();
+      };
     const pour = l => {
       if (mix.length >= 2) return;
       mix += l;
@@ -1637,11 +1715,121 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     popIn(dlgEl);
   }
 
+  function labCheckDone() {
+    if (prog.lab.ac && prog.lab.bc && prog.lab.ab && prog.lab.elec && prog.lab.mag && !prog.done.lab) {
+      prog.done.lab = true;
+      setSignDone(ENT_LAB);
+      addXp(15);
+      checkAllDone();
+      toast('Semua eksperimen lab selesai! +15 XP');
+    }
+  }
+
+  function openLabElec() {
+    setHead('#2e9e5b', 'LAB IPA — Eksperimen Listrik');
+    const steps = ['Pasang baterai', 'Sambungkan kabel', 'Pasang saklar', 'Pasang lampu'];
+    const order = [...steps].sort(() => Math.random() - 0.5);
+    let st = 0;
+    dlgBody.innerHTML = `<p>Susun rangkaian agar lampu menyala — tap sesuai urutan:</p><div class="g-steps" id="gEStep">Langkah 1/${steps.length}</div>`;
+    order.forEach(txt => {
+      const b = document.createElement('button');
+      b.className = 'g-opt';
+      b.textContent = txt;
+      b.onclick = () => {
+        if (b.disabled) return;
+        if (txt === steps[st]) {
+          b.classList.add('correct');
+          b.disabled = true;
+          st += 1;
+          pulse(b);
+          sfx.pick();
+          hud.querySelector('#gEStep').textContent = `Langkah ${st}/${steps.length}`;
+          if (st === steps.length) {
+            const p = document.createElement('p');
+            p.innerHTML = '<b>Lampu menyala!</b> Arus listrik hanya mengalir jika rangkaian tertutup dan komponen terpasang berurutan.';
+            dlgBody.appendChild(p);
+            sfx.quest();
+            buzz([60, 40, 60]);
+            if (!prog.lab.elec) {
+              prog.lab.elec = true;
+              saveProgress(prog);
+              labCheckDone();
+            }
+          }
+        } else shake(b);
+      };
+      dlgBody.appendChild(b);
+    });
+    dlgActions.innerHTML = '';
+    const bBack = document.createElement('button');
+    bBack.textContent = 'Kembali';
+    bBack.onclick = openLab;
+    const bOut = document.createElement('button');
+    bOut.textContent = 'Keluar';
+    bOut.onclick = closeDlg;
+    dlgActions.append(bBack, bOut);
+    dlgEl.hidden = false;
+    popIn(dlgEl);
+  }
+
+  function openLabMag() {
+    setHead('#2e9e5b', 'LAB IPA — Eksperimen Magnet');
+    const items = [
+      { n: 'Paku besi', ok: true }, { n: 'Pensil kayu', ok: false },
+      { n: 'Koin logam', ok: true }, { n: 'Karet gelang', ok: false },
+      { n: 'Klip kertas', ok: true }, { n: 'Bola plastik', ok: false }
+    ].sort(() => Math.random() - 0.5);
+    let found = 0;
+    dlgBody.innerHTML = '<p>Tap benda yang TARIK oleh magnet:</p><div class="g-steps" id="gMStep">Ditemukan 0/3</div>';
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.className = 'g-opt';
+      b.textContent = it.n;
+      b.onclick = () => {
+        if (b.disabled) return;
+        if (it.ok) {
+          b.classList.add('correct');
+          b.disabled = true;
+          found += 1;
+          pulse(b);
+          sfx.pick();
+          hud.querySelector('#gMStep').textContent = `Ditemukan ${found}/3`;
+          if (found === 3) {
+            const p = document.createElement('p');
+            p.innerHTML = '<b>Tepat!</b> Magnet menarik benda dari besi/baja, bukan kayu, karet, atau plastik.';
+            dlgBody.appendChild(p);
+            sfx.quest();
+            buzz([60, 40, 60]);
+            if (!prog.lab.mag) {
+              prog.lab.mag = true;
+              saveProgress(prog);
+              labCheckDone();
+            }
+          }
+        } else {
+          shake(b);
+          sfx.wrong();
+        }
+      };
+      dlgBody.appendChild(b);
+    });
+    dlgActions.innerHTML = '';
+    const bBack = document.createElement('button');
+    bBack.textContent = 'Kembali';
+    bBack.onclick = openLab;
+    const bOut = document.createElement('button');
+    bOut.textContent = 'Keluar';
+    bOut.onclick = closeDlg;
+    dlgActions.append(bBack, bOut);
+    dlgEl.hidden = false;
+    popIn(dlgEl);
+  }
+
   function openShot(cfg) {
     dialogOpen = true;
     canteenItem = null;
     setHead(cfg.color, `${cfg.label} — Mini-game`);
-    dlgBody.innerHTML = `<p>${cfg.hint}</p><div class="g-bar"><div class="g-zone" style="left:${cfg.z0 * 100}%;width:${(cfg.z1 - cfg.z0) * 100}%"></div><div class="g-fill" id="gFill"></div></div><p class="g-steps">Tap LEMPAR saat garis berada di area hijau!</p>`;
+    dlgBody.innerHTML = `<p>${cfg.hint}</p><div class="g-bar"><div class="g-zone" style="left:${cfg.z0 * 100}%;width:${(cfg.z1 - cfg.z0) * 100}%"></div><div class="g-fill" id="gFill"></div></div><p class="g-steps">Tap LEMPAR saat garis berada di area hijau!</p>${cfg.need > 1 ? `<p class="g-steps" id="gShotCnt">Berhasil: ${cfg.count}/${cfg.need}</p>` : ''}`;
     dlgActions.innerHTML = '';
     const fill = dlgBody.querySelector('#gFill');
     let power = 0;
@@ -1663,7 +1851,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       const to = hit
         ? cfg.target.clone()
         : cfg.target.clone().add(new THREE.Vector3((Math.random() - 0.5) * 3, -0.5, (Math.random() - 0.5) * 2.4));
-      shot = { ball: cfg.ball, from, to, e: 0, arc: cfg.arc, hit, id: cfg.id, home: cfg.ball.userData.home.clone() };
+      shot = { ball: cfg.ball, from, to, e: 0, arc: cfg.arc, hit, cfg, home: cfg.ball.userData.home.clone() };
     };
     const bOut = document.createElement('button');
     bOut.textContent = 'Keluar';
@@ -1805,11 +1993,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       bOk.onclick = closeDlg;
       dlgActions.append(bOk);
     } else {
-      dlgBody.innerHTML = '<p>Rak buku perpustakaan: buku cerita, ensiklopedia, dan buku agama. Membaca 15 menit setiap hari membuatmu semakin pintar!</p>';
+      const hr = prog.hunt.length;
+      dlgBody.innerHTML = `<p>Rak buku perpustakaan: buku cerita, ensiklopedia, dan buku agama. Membaca 15 menit setiap hari membuatmu semakin pintar!</p><p><b>Misi Buku Hilang:</b> ${hr}/${HUNT_POS.length} ditemukan. ${prog.done.hunt ? 'Misi selesai, terima kasih sudah membantu Bu Rina!' : 'Ada 5 buku berserakan di halaman & sekitar sekolah — cari buku berkilau kuning!'}</p>`;
       dlgActions.innerHTML = '';
       const bOk = document.createElement('button');
       bOk.className = 'primary';
-      bOk.textContent = 'Menarik';
+      bOk.textContent = prog.done.hunt ? 'Menarik' : 'Siap Mencari!';
       bOk.onclick = closeDlg;
       dlgActions.append(bOk);
     }
@@ -1819,6 +2008,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   const SHOT_BB = { id: 'bball', label: 'LEMPAR BASKET', color: '#d9822b', hint: 'Masukkan bola basket ke ring!', ball: basketBall, target: new THREE.Vector3(39.2, 2.15, -1.2), arc: 2.6, z0: 0.72, z1: 0.92, period: 1600 };
   const SHOT_FB = { id: 'fb', label: 'TENDANG PENALTI', color: '#2e9e5b', hint: 'Tendang bola ke gawang!', ball: footBall, target: new THREE.Vector3(27.2, 0.7, 0), arc: 1.8, z0: 0.7, z1: 0.94, period: 1500 };
+  const SHOT_VB = { id: 'vbplay', label: 'PASSING VOLI', color: '#3f7fd9', hint: 'Pukul bola melewati net 5 kali beruntun!', ball: volleyBall, target: new THREE.Vector3(32.6, 0.8, -0.6), arc: 2.2, z0: 0.7, z1: 0.92, period: 1400, need: 5, count: 0 };
+  const SHOT_BT = { id: 'btplay', label: 'SMASH BULU TANGKIS', color: '#8b5cf6', hint: 'Smash shuttlecock melewati net 3 kali beruntun!', ball: shuttle, target: new THREE.Vector3(32.4, 0.35, 7.15), arc: 1.5, z0: 0.7, z1: 0.93, period: 1300, need: 3, count: 0 };
 
   const interactables = [
     { id: 'kantin', x: 10.2, z: 4.9, r: 2.4, opened: false, open: openCanteen },
@@ -1832,7 +2023,9 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     { id: 'vb', x: 31.5, z: 0, r: 2.9, opened: false, open: () => openLesson(SPORTS[1]) },
     { id: 'bb', x: 37.4, z: -1.2, r: 2.9, opened: false, open: () => openLesson(SPORTS[2]) },
     { id: 'bball', x: 38.5, z: -0.9, r: 2.6, opened: false, open: () => openShot(SHOT_BB) },
-    { id: 'bt', x: 31.5, z: 6.0, r: 2.9, opened: false, open: () => openLesson(SPORTS[3]) }
+    { id: 'bt', x: 31.5, z: 6.0, r: 2.9, opened: false, open: () => openLesson(SPORTS[3]) },
+    { id: 'vbplay', x: 30.2, z: 1.0, r: 2.0, opened: false, open: () => openShot(SHOT_VB) },
+    { id: 'btplay', x: 30.6, z: 5.8, r: 2.0, opened: false, open: () => openShot(SHOT_BT) }
   ];
 
   const ringGeo = new THREE.RingGeometry(0.55, 0.75, 28);
@@ -1854,6 +2047,9 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   function tick(dt, t) {
     ringMat.opacity = 0.22 + Math.sin(t / 300) * 0.14;
+    updateSky();
+    scene.fog.near = 22 + camDist * 1.9;
+    scene.fog.far = 54 + camDist * 2.1;
     prog.playMs += dt * 1000;
     playSave += dt;
     if (playSave > 60) {
@@ -1902,6 +2098,32 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       player.position.x = px;
       player.position.z = pz;
       player.rotation.y = lerpAngle(player.rotation.y, Math.atan2(mx, mz), Math.min(1, dt * 10));
+      if (!shot) {
+        const bdx = footBall.position.x - player.position.x;
+        const bdz = footBall.position.z - player.position.z;
+        if (Math.hypot(bdx, bdz) < 0.85) {
+          footBall.position.x = Math.min(40.5, Math.max(17.5, footBall.position.x + mx * speed * dt * 1.2));
+          footBall.position.z = Math.min(8.5, Math.max(-8.5, footBall.position.z + mz * speed * dt * 1.2));
+          footBall.rotation.x += dt * 10;
+          if (footBall.position.x > 26.75 && Math.abs(footBall.position.z) < 1.45 && !sbGolCd) {
+            sbGolCd = true;
+            setTimeout(() => {
+              footBall.position.copy(footBall.userData.home);
+              sbGolCd = false;
+            }, 1400);
+            sfx.quest();
+            buzz([60, 40, 60]);
+            if (!prog.done.sbplay) {
+              prog.done.sbplay = true;
+              addXp(10);
+              checkAllDone();
+              toast('Gol! Bola berhasil digiring ke gawang +10 XP');
+            } else {
+              toast('Gol lagi!');
+            }
+          }
+        }
+      }
     }
 
     const amt = moving ? 1 : 0;
@@ -1941,15 +2163,36 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         const s0 = shot;
         shot = null;
         if (s0.hit) {
-          sfx.quest();
-          buzz([60, 40, 60]);
-          if (!prog.done[s0.id]) {
-            prog.done[s0.id] = true;
-            addXp(10);
-            checkAllDone();
-            toast('Masuk! +10 XP');
+          if (s0.cfg.need > 1) {
+            s0.cfg.count += 1;
+            sfx.pick();
+            buzz(25);
+            if (s0.cfg.count >= s0.cfg.need) {
+              sfx.quest();
+              buzz([60, 40, 60]);
+              closeDlg();
+              if (!prog.done[s0.cfg.id]) {
+                prog.done[s0.cfg.id] = true;
+                addXp(12);
+                checkAllDone();
+                toast(`${s0.cfg.label} selesai! +12 XP`);
+              } else {
+                toast(`${s0.cfg.label} selesai lagi!`);
+              }
+            } else {
+              toast(`Berhasil ${s0.cfg.count}/${s0.cfg.need}! Lanjut!`);
+            }
           } else {
-            toast('Masuk lagi! (XP sudah pernah diambil)');
+            sfx.quest();
+            buzz([60, 40, 60]);
+            if (!prog.done[s0.cfg.id]) {
+              prog.done[s0.cfg.id] = true;
+              addXp(10);
+              checkAllDone();
+              toast('Masuk! +10 XP');
+            } else {
+              toast('Masuk lagi! (XP sudah pernah diambil)');
+            }
           }
         } else {
           sfx.wrong();
@@ -1957,7 +2200,12 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         }
         landTimer = setTimeout(() => {
           s0.ball.position.copy(s0.home);
-          closeDlg();
+          if (s0.cfg.need > 1) {
+            if (s0.cfg.count >= s0.cfg.need) {
+              s0.cfg.count = 0;
+              closeDlg();
+            } else openShot(s0.cfg);
+          } else closeDlg();
         }, 1100);
       }
     }
@@ -1987,6 +2235,28 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         }
       }
       for (const tm of trashMeshes) tm.mesh.rotation.y += dt * 1.4;
+      for (let i = huntMeshes.length - 1; i >= 0; i--) {
+        const hb = huntMeshes[i];
+        hb.mesh.rotation.y += dt * 1.8;
+        hb.mesh.position.y = 0.6 + Math.sin(t / 380 + hb.i) * 0.07;
+        if (Math.hypot(player.position.x - hb.mesh.position.x, player.position.z - hb.mesh.position.z) < 0.7) {
+          scene.remove(hb.mesh);
+          huntMeshes.splice(i, 1);
+          prog.hunt.push(hb.i);
+          saveProgress(prog);
+          sfx.coin();
+          buzz(20);
+          if (prog.hunt.length === HUNT_POS.length) {
+            prog.done.hunt = true;
+            addXp(20);
+            toast('Semua buku hilang ditemukan! +20 XP');
+            checkAllDone();
+          } else {
+            addXp(4);
+            toast(`Buku ditemukan +4 XP (${prog.hunt.length}/${HUNT_POS.length})`);
+          }
+        }
+      }
       for (let i = trashMeshes.length - 1; i >= 0; i--) {
         const tm = trashMeshes[i];
         if (Math.hypot(player.position.x - tm.mesh.position.x, player.position.z - tm.mesh.position.z) < 0.62) {

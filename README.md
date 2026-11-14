@@ -44,15 +44,17 @@ Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit).
 - **Kustomisasi karakter**: putra/putri, jilbab syari untuk putri (tanpa poni, rok panjang), 3 gaya rambut putra, kacamata, badan, 6 tema seragam (disimpan otomatis).
 - **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi tampil di papan tulis 3D, kuis 3 soal per kelas, tips guru berputar kalau pelajaran diulang.
 - **Kantin**: aritmetika sosial (total = harga × jumlah, saldo) + mini-game **Latihan Hitung Cepat** (soal acak +/−/×, streak, bonus XP terbatas per sesi).
-- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangkis + mini-game lempar basket & penalti (bar tenaga osilasi, bola parabola).
-- **Perpustakaan & Lab IPA**: quest ambil buku; eksperimen cairan A/B/C + indikator.
+- **Lapangan olahraga**: sepak bola, voli, basket, bulu tangkis + mini-game lempar basket & penalti (bar tenaga osilasi, bola parabola), **giring bola ke gawang** (bola didorong kaki), **passing voli 5x** dan **smash bulu tangkis 3x**.
+- **Perpustakaan & Lab IPA**: quest ambil buku + **Misi Buku Hilang** (5 buku berserakan di halaman & sekitar sekolah); eksperimen cairan A/B/C + indikator, **rangkaian listrik**, dan **magnet**.
+- **Peta terbuka**: halaman luas dengan pepohonan & batu pemandang, bebas dijelajahi tanpa batas tembok.
+- **Siang/malam real-time**: warna langit, posisi matahari/bulan 3D, dan intensitas cahaya mengikuti jam perangkat; jam tampil di HUD.
 - **Mushola**: tap urutan wudhu yang benar (5 langkah).
 - **Kebun sekolah**: siram 3 bedengan dengan mendekatinya.
 - **Bersih-bersih & bintang**: 12 sampah + 6 bintang tersebar.
 - **5 quest antar-barang**: q1 kantin→mtk, q2 mtk→ipa, q3 ipa→perpus→bing, q4 pai→mushola, q5 bindo→kantin. Pengantaran bisa ke ruangan atau zona.
 - **Sistem XP & rank**: Pemula → Siswa Rajin → Bintang Kelas → Juara Sekolah; konfeti saat 100% selesai.
 - **Immersif**: intro kamera sinematik 3 detik, NPC menoleh saat didekati, name tag di atas kepala, minimap dengan target tugas berkedip, cincin interaksi berdenyut, efek suara WebAudio + getar (bisa dimatikan).
-- **HUD**: kelas/aktivitas/tugas, chip XP (tap → daftar tujuan + tombol reset 2-tap), joystick + tombol zoom (kamera 3.0–16.5), tombol suara.
+- **HUD**: kelas/aktivitas/tugas, chip XP (tap → daftar tujuan + tombol reset 2-tap), joystick + tombol zoom (kamera 3.0–34), tombol suara, jam.
 - **PWA**: installable, service worker (vendor cache-first, sisanya network-first).
 
 ## Penyimpanan & sinkron cloud
@@ -73,7 +75,7 @@ Cloud (Supabase project `djybwvdjipxftxmtqjbt`, tabel **`app_settings`** — tab
 - **Tanpa komentar** di source.
 - Vanilla JS ES modules, Three.js dari vendor lokal (importmap `"three"`), anime.js global (`const A = window.anime`).
 - Karakter blocky flat-face ala Roblox; putri jilbab syari + rok panjang; putra hanya 3 gaya rambut.
-- Semua posisi penting diekspor dari `js/game.js` untuk smoke test: `QUESTS, LIB, WUDHU_STEPS, TRASH_POS, STAR_POS, GARDEN_BEDS, LAB_LIQUIDS`.
+- Semua posisi penting diekspor dari `js/game.js` untuk smoke test: `QUESTS, LIB, WUDHU_STEPS, TRASH_POS, STAR_POS, GARDEN_BEDS, LAB_LIQUIDS, HUNT_POS`.
 
 ## Roadmap ide berikutnya
 
