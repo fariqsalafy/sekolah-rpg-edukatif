@@ -878,3 +878,25 @@ body.in-game #stage { height: 100dvh; }
 }
 
 #gClock { opacity: 0.8; font-weight: 600; }
+
+#gAct {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  border: 2px solid var(--blue);
+  background: #0f1113d9;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  pointer-events: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+#gAct:active {
+  background: var(--blue);
+}

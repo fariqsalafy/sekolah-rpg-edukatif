@@ -861,12 +861,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     </div>
     <canvas id="gMap" width="120" height="120"></canvas>
     <div id="gJoy"><div id="gKnob"></div></div>
+    <button id="gAct" type="button" hidden></button>
     <div class="g-zoom">
       <button id="gZoomIn" type="button">+</button>
       <button id="gZoomOut" type="button">−</button>
       <button id="gSnd" type="button">SFX</button>
     </div>
-    <div class="g-hint" id="gHint">Geser: kamera · Pinch / tombol: zoom</div>
+    <div class="g-hint" id="gHint">Dekati objek lalu tap tombol aksi · Geser: kamera · Zoom: pinch / tombol</div>
     <div id="gDlg" hidden>
       <div class="g-dlg-head" id="gDlgHead"></div>
       <div class="g-dlg-body" id="gDlgBody"></div>
@@ -883,7 +884,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const dlgActions = hud.querySelector('#gDlgActions');
 
   hud.querySelector('#gName').textContent = characterConfig.name;
-  const HINT_DEF = 'Geser: kamera · Pinch / tombol: zoom';
+  const HINT_DEF = 'Dekati objek lalu tap tombol aksi · Geser: kamera · Zoom: pinch / tombol';
   const updateHud = () => {
     const dR = SCHOOL_ROOMS.filter(r => prog.done[r.id]).length;
     const acts = [...SPORTS.map(s => s.id), ...EXTRA_DONE];
@@ -1071,6 +1072,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   const camPointers = new Map();
   let pinchDist = 0;
+  const actBtn = hud.querySelector('#gAct');
+  let actNow = null;
+  let actShown = '';
+  actBtn.addEventListener('click', () => {
+    ensureAudio();
+    intro = 0;
+    if (actNow && !dialogOpen) actNow.run();
+  });
   const camDown = e => {
     ensureAudio();
     intro = 0;
@@ -1145,7 +1154,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     intro = 0;
     const k = e.key.toLowerCase();
     keys[k] = true;
-    if (k.startsWith('arrow')) e.preventDefault();
+    if (k.startsWith('arrow') || k === ' ') e.preventDefault();
+    if ((k === 'e' || k === ' ') && actNow && !dialogOpen) actNow.run();
   };
   const keyUp = e => { keys[e.key.toLowerCase()] = false; };
 
@@ -1162,8 +1172,6 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   let dialogOpen = false;
   let currentRoom = null;
-  let visitOpened = false;
-  let pendingT = 0;
   let quizEnt = null;
   let quizIdx = 0;
   let quizXp = 0;
@@ -1172,7 +1180,6 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   let answerTimer = null;
   let canteenItem = null;
   let hasEntered = false;
-  let exitOpened = false;
   let kebunHinted = false;
   let intro = 3.2;
   let powerTimer = null;
@@ -2012,20 +2019,20 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   const SHOT_BT = { id: 'btplay', label: 'SMASH BULU TANGKIS', color: '#8b5cf6', hint: 'Smash shuttlecock melewati net 3 kali beruntun!', ball: shuttle, target: new THREE.Vector3(32.4, 0.35, 7.15), arc: 1.5, z0: 0.7, z1: 0.93, period: 1300, need: 3, count: 0 };
 
   const interactables = [
-    { id: 'kantin', x: 10.2, z: 4.9, r: 2.4, opened: false, open: openCanteen },
-    { id: 'book', x: -8.6, z: 4.2, r: 1.7, opened: false, open: openBook },
-    { id: 'lib', x: -9, z: 5.5, r: 2.8, opened: false, open: () => openLesson(LIB) },
-    { id: 'lab', x: 1.075, z: 5.3, r: 2.8, opened: false, open: openLab },
-    { id: 'mus', x: 2.5, z: -10.8, r: 2.6, opened: false, open: openWudhu },
-    { id: 'tono', x: 18.6, z: 0, r: 2.4, opened: false, open: openPjok },
-    { id: 'sb', x: 23.4, z: 0, r: 2.9, opened: false, open: () => openLesson(SPORTS[0]) },
-    { id: 'fb', x: 25.6, z: 0, r: 2.0, opened: false, open: () => openShot(SHOT_FB) },
-    { id: 'vb', x: 31.5, z: 0, r: 2.9, opened: false, open: () => openLesson(SPORTS[1]) },
-    { id: 'bb', x: 37.4, z: -1.2, r: 2.9, opened: false, open: () => openLesson(SPORTS[2]) },
-    { id: 'bball', x: 38.5, z: -0.9, r: 2.6, opened: false, open: () => openShot(SHOT_BB) },
-    { id: 'bt', x: 31.5, z: 6.0, r: 2.9, opened: false, open: () => openLesson(SPORTS[3]) },
-    { id: 'vbplay', x: 30.2, z: 1.0, r: 2.0, opened: false, open: () => openShot(SHOT_VB) },
-    { id: 'btplay', x: 30.6, z: 5.8, r: 2.0, opened: false, open: () => openShot(SHOT_BT) }
+    { id: 'kantin', label: 'Kantin — Bu Kantin', x: 10.2, z: 4.9, r: 2.4, open: openCanteen },
+    { id: 'book', label: 'Meja Buku — Bu Rina', x: -8.6, z: 4.2, r: 1.7, open: openBook },
+    { id: 'lib', label: 'Pelajaran Perpustakaan', x: -9, z: 5.5, r: 2.8, open: () => openLesson(LIB) },
+    { id: 'lab', label: 'Eksperimen Lab IPA', x: 1.075, z: 5.3, r: 2.8, open: openLab },
+    { id: 'mus', label: 'Latihan Wudhu', x: 2.5, z: -10.8, r: 2.6, open: openWudhu },
+    { id: 'tono', label: 'Bicara Pak Tono', x: 18.6, z: 0, r: 2.4, open: openPjok },
+    { id: 'sb', label: 'Pelajaran Sepak Bola', x: 23.4, z: 0, r: 2.9, open: () => openLesson(SPORTS[0]) },
+    { id: 'fb', label: 'Tendang Penalti', x: 25.6, z: 0, r: 2.0, open: () => openShot(SHOT_FB) },
+    { id: 'vb', label: 'Pelajaran Voli', x: 31.5, z: 0, r: 2.9, open: () => openLesson(SPORTS[1]) },
+    { id: 'bb', label: 'Pelajaran Basket', x: 37.4, z: -1.2, r: 2.9, open: () => openLesson(SPORTS[2]) },
+    { id: 'bball', label: 'Lempar Basket', x: 38.5, z: -0.9, r: 2.6, open: () => openShot(SHOT_BB) },
+    { id: 'bt', label: 'Pelajaran Bulu Tangkis', x: 31.5, z: 6.0, r: 2.9, open: () => openLesson(SPORTS[3]) },
+    { id: 'vbplay', label: 'Passing Voli', x: 30.2, z: 1.0, r: 2.0, open: () => openShot(SHOT_VB) },
+    { id: 'btplay', label: 'Smash Bulu Tangkis', x: 30.6, z: 5.8, r: 2.0, open: () => openShot(SHOT_BT) }
   ];
 
   const ringGeo = new THREE.RingGeometry(0.55, 0.75, 28);
@@ -2303,57 +2310,46 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     }
 
     const room = roomAt(player.position.x, player.position.z);
-    if (room) {
-      if (room !== currentRoom) {
-        currentRoom = room;
-        visitOpened = false;
-        pendingT = 0;
-        closeDlg();
-      }
-      if (targetRoomOf(prog.carry) === room.id) {
-        deliverQuest(room);
-        visitOpened = true;
-      } else if (!visitOpened && !dialogOpen) {
-        pendingT += dt;
-        if (pendingT >= 0.5) {
-          visitOpened = true;
-          openLesson(room);
-        }
-      }
-    } else if (currentRoom) {
-      currentRoom = null;
-      visitOpened = false;
-      if (dialogOpen && !canteenItem) closeDlg();
-    }
-
-    if (!dialogOpen && prog.carry && prog.carry.target !== 'lib') {
-      const zoneIa = interactables.find(ia => ia.id === prog.carry.target);
-      if (zoneIa && Math.hypot(player.position.x - zoneIa.x, player.position.z - zoneIa.z) < zoneIa.r * 0.9) {
-        deliverQuest(zoneIa);
-      }
-    }
-
-    for (const ia of interactables) {
-      const d = Math.hypot(player.position.x - ia.x, player.position.z - ia.z);
-      if (d < ia.r) {
-        if (!ia.opened && !dialogOpen) {
-          ia.opened = true;
-          ia.open();
-        }
-      } else if (d > ia.r + 0.8) {
-        ia.opened = false;
-      }
-    }
-
+    currentRoom = room;
     if (player.position.x > -15.5) hasEntered = true;
-    const outside = player.position.x < -16.9 && Math.abs(player.position.z) < 2.6;
-    if (outside) {
-      if (hasEntered && !exitOpened && !dialogOpen) {
-        exitOpened = true;
-        openExit();
+
+    actNow = null;
+    if (!dialogOpen && intro <= 0) {
+      const rid = targetRoomOf(prog.carry);
+      if (rid && room && room.id === rid) {
+        actNow = { label: `Antar ${prog.carry.item}`, run: () => deliverQuest(room) };
+      } else if (rid) {
+        const zoneIa = interactables.find(ia => ia.id === rid);
+        if (zoneIa && Math.hypot(player.position.x - zoneIa.x, player.position.z - zoneIa.z) < zoneIa.r * 0.9) {
+          actNow = { label: `Antar ${prog.carry.item}`, run: () => deliverQuest(zoneIa) };
+        }
       }
-    } else {
-      exitOpened = false;
+      if (!actNow) {
+        let best = null;
+        let bd = 1e9;
+        for (const ia of interactables) {
+          const d = Math.hypot(player.position.x - ia.x, player.position.z - ia.z);
+          if (d < ia.r && d < bd) {
+            bd = d;
+            best = ia;
+          }
+        }
+        if (best) actNow = { label: best.label, run: best.open };
+      }
+      if (!actNow && room) actNow = { label: `Pelajaran ${room.label}`, run: () => openLesson(room) };
+      if (!actNow && hasEntered && player.position.x < -16.9 && Math.abs(player.position.z) < 2.6) {
+        actNow = { label: 'Pintu Keluar', run: openExit };
+      }
+    }
+    const actLabel = actNow ? actNow.label : '';
+    if (actLabel !== actShown) {
+      actShown = actLabel;
+      if (actLabel) {
+        actBtn.textContent = actLabel;
+        actBtn.hidden = false;
+      } else {
+        actBtn.hidden = true;
+      }
     }
 
     if (intro > 0) {

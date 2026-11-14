@@ -54,7 +54,7 @@ Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit).
 - **5 quest antar-barang**: q1 kantin→mtk, q2 mtk→ipa, q3 ipa→perpus→bing, q4 pai→mushola, q5 bindo→kantin. Pengantaran bisa ke ruangan atau zona.
 - **Sistem XP & rank**: Pemula → Siswa Rajin → Bintang Kelas → Juara Sekolah; konfeti saat 100% selesai.
 - **Immersif**: intro kamera sinematik 3 detik, NPC menoleh saat didekati, name tag di atas kepala, minimap dengan target tugas berkedip, cincin interaksi berdenyut, efek suara WebAudio + getar (bisa dimatikan).
-- **HUD**: kelas/aktivitas/tugas, chip XP (tap → daftar tujuan + tombol reset 2-tap), joystick + tombol zoom (kamera 3.0–34), tombol suara, jam.
+- **HUD**: kelas/aktivitas/tugas, chip XP (tap → daftar tujuan + tombol reset 2-tap), joystick + tombol zoom (kamera 3.0–34), tombol suara, jam, **tombol aksi** yang muncul saat mendekati objek/NPC/ruangan (tidak ada pop-up otomatis; bisa juga tombol E/Spasi).
 - **PWA**: installable, service worker (vendor cache-first, sisanya network-first).
 
 ## Penyimpanan & sinkron cloud
