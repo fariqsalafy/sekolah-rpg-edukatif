@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildCharacter } from './character.js';
 import { createGame } from './game.js';
 import { initCloud } from './cloud.js';
+import { login, session, clearSession } from './auth.js';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -42,8 +43,6 @@ function loadState() {
   };
 }
 
-await initCloud();
-let state = loadState();
 let activeTab = 'rambut';
 let needRebuild = true;
 let charGroup = null;
@@ -57,6 +56,46 @@ const panelBody = $('#panelBody');
 const welcome = $('#welcome');
 const welcomeText = $('#welcomeText');
 const toastEl = $('#toast');
+
+function ensureLogin() {
+  const box = $('#login');
+  const nisEl = $('#loginNis');
+  const passEl = $('#loginPass');
+  const errEl = $('#loginErr');
+  const btn = $('#loginBtn');
+  box.hidden = false;
+  nisEl.focus();
+  return new Promise(resolve => {
+    const submit = async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.textContent = 'Memeriksa...';
+      errEl.hidden = true;
+      try {
+        const sesi = await login(nisEl.value, passEl.value);
+        box.hidden = true;
+        resolve(sesi);
+      } catch (e) {
+        errEl.textContent = e.message || 'Gagal masuk. Coba lagi.';
+        errEl.hidden = false;
+        passEl.value = '';
+        passEl.focus();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+      }
+    };
+    btn.addEventListener('click', submit);
+    nisEl.addEventListener('keydown', e => { if (e.key === 'Enter') passEl.focus(); });
+    passEl.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  });
+}
+
+const user = session() || await ensureLogin();
+await initCloud(user.id);
+const hasProfile = !!localStorage.getItem(LS_KEY);
+let state = loadState();
+if (!state.name.trim()) state.name = user.nama;
 
 function persistNow() {
   try {
@@ -263,8 +302,17 @@ function enterSchool() {
   welcome.hidden = true;
   document.body.classList.add('in-game');
   mode = 'game';
-  game = createGame({ canvas, renderer, characterConfig: { ...state }, toast, onEdit: exitToEdit });
+  game = createGame({ canvas, renderer, characterConfig: { ...state }, toast, onEdit: exitToEdit, onLogout: doLogout });
   toast(`Selamat datang di SMP ABBS Surakarta, ${state.name.trim()}!`);
+}
+
+function doLogout() {
+  if (game) {
+    game.dispose();
+    game = null;
+  }
+  clearSession();
+  location.reload();
 }
 
 function exitToEdit() {
@@ -441,3 +489,4 @@ syncGenderSeg();
 renderTabs();
 renderPanel();
 resize();
+if (hasProfile) enterSchool();

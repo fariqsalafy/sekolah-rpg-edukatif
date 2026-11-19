@@ -2,29 +2,16 @@ const SB_URL = 'https://djybwvdjipxftxmtqjbt.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqeWJ3dmRqaXB4ZnR4bXRxamJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwODI5NzgsImV4cCI6MjA5NDY1ODk3OH0.vKFaGeIHieNQuXvepaA-GuUqlJ7QjIPmwB7ZKo3Kx8U';
 const TBL = 'app_settings';
 const PREFIX = 'rpg_save_';
-const DEV_KEY = 'sekolahRpg.device';
+const LAST_KEY = 'sekolahRpg.lastUser';
 const CHAR_KEY = 'sekolahRpg.karakter.v1';
 const PROG_KEY = 'sekolahRpg.progres.v1';
 const WATCH = [CHAR_KEY, PROG_KEY];
-
-function deviceId() {
-  let d = null;
-  try {
-    d = localStorage.getItem(DEV_KEY);
-  } catch (e) {}
-  if (!d) {
-    d = 'rpg-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    try {
-      localStorage.setItem(DEV_KEY, d);
-    } catch (e) {}
-  }
-  return d;
-}
+let userId = '';
 
 async function pull() {
   try {
     const res = await Promise.race([
-      fetch(`${SB_URL}/rest/v1/${TBL}?key=eq.${PREFIX}${deviceId()}&select=value&limit=1`, {
+      fetch(`${SB_URL}/rest/v1/${TBL}?key=eq.${PREFIX}${userId}&select=value&limit=1`, {
         headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` }
       }),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))
@@ -52,16 +39,16 @@ async function push() {
       progres: localStorage.getItem(PROG_KEY) || ''
     };
     const res = await Promise.race([
-      fetch(`${SB_URL}/rest/v1/${TBL}`, {
+      fetch(`${SB_URL}/rest/v1/${TBL}?on_conflict=key`, {
         method: 'POST',
         keepalive: true,
         headers: {
           apikey: SB_KEY,
           Authorization: `Bearer ${SB_KEY}`,
           'Content-Type': 'application/json',
-          Prefer: 'resolution=merge-duplicateds,return=minimal'
+          Prefer: 'resolution=merge-duplicates,return=minimal'
         },
-        body: JSON.stringify([{ key: PREFIX + deviceId(), value: JSON.stringify(payload), updated_at: new Date().toISOString() }])
+        body: JSON.stringify([{ key: PREFIX + userId, value: JSON.stringify(payload), updated_at: new Date().toISOString() }])
       }),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
     ]);
@@ -72,13 +59,19 @@ async function push() {
   } catch (e) {}
 }
 
-export function initCloud() {
+export function initCloud(uid) {
+  userId = uid;
   try {
     const orig = localStorage.setItem.bind(localStorage);
     localStorage.setItem = (k, v) => {
       orig(k, v);
       if (WATCH.includes(k)) queuePush();
     };
+    if (localStorage.getItem(LAST_KEY) !== userId) {
+      localStorage.removeItem(CHAR_KEY);
+      localStorage.removeItem(PROG_KEY);
+      orig(LAST_KEY, userId);
+    }
   } catch (e) {}
   window.addEventListener('pagehide', () => {
     clearTimeout(pushTimer);

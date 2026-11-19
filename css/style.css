@@ -417,6 +417,55 @@ main {
   padding: 16px;
 }
 
+#login {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0c0d0e;
+  z-index: 40;
+  padding: 16px;
+}
+
+.login-fields {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  text-align: left;
+}
+
+.login-fields label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.login-fields input {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.login-fields input:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+#loginErr {
+  margin-top: 12px;
+  color: #ff6b6b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -549,7 +598,8 @@ body.in-game #stage { height: 100dvh; }
   pointer-events: auto;
 }
 
-#gBack {
+#gBack,
+#gOut {
   padding: 10px 14px;
   border-radius: 10px;
   border: 1px solid var(--line);
@@ -562,7 +612,13 @@ body.in-game #stage { height: 100dvh; }
   cursor: pointer;
 }
 
-#gBack:active { transform: scale(0.96); }
+#gOut {
+  color: #ff9f9f;
+  border-color: #5a2a2a;
+}
+
+#gBack:active,
+#gOut:active { transform: scale(0.96); }
 
 .g-mid {
   flex: 1;

@@ -55,6 +55,22 @@
       </div>
     </div>
   </div>
+  <div id="login" hidden>
+    <div class="card">
+      <h2>Masuk</h2>
+      <p>Siswa SMP ABBS Surakarta — pakai NIS dan kata sandi akun LMS.</p>
+      <div class="login-fields">
+        <label for="loginNis">NIS</label>
+        <input id="loginNis" inputmode="numeric" autocomplete="username" placeholder="Nomor Induk Siswa">
+        <label for="loginPass">Kata Sandi</label>
+        <input id="loginPass" type="password" autocomplete="current-password" placeholder="Kata sandi">
+      </div>
+      <p id="loginErr" hidden></p>
+      <div class="btn-row">
+        <button id="loginBtn" type="button" class="primary">Masuk</button>
+      </div>
+    </div>
+  </div>
   <div id="toast"></div>
   <div id="webglError" hidden>Perangkat tidak mendukung WebGL, kustomisasi tidak dapat ditampilkan.</div>
   <script type="module" src="./js/main.js"></script>

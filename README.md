@@ -28,8 +28,9 @@ Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit).
 
 | File | Isi |
 |---|---|
-| `index.html` | Layar kustomisasi karakter + canvas game, importmap three, anime.js, manifest |
-| `js/main.js` | Bootstrap: `await initCloud()`, load state, mulai game, registrasi service worker |
+| `index.html` | Layar login NIS + kustomisasi karakter + canvas game, importmap three, anime.js, manifest |
+| `js/main.js` | Bootstrap: login/`session`, `initCloud(user.id)`, load state, mulai game, registrasi service worker |
+| `js/auth.js` | Login siswa: NIS → email (RPC `get_email_by_nis`) → Supabase Auth, lalu baca nama/kelas dari `profiles` |
 | `js/options.js` + `js/character.js` | Pilihan kombinasi karakter (putra/putri, jilbab, rambut, seragam) + pembangunan karakter blocky |
 | `js/schoolData.js` | Data 5 kelas: id, guru, warna, materi, 3 soal kuis, posisi |
 | `js/game.js` | Inti game (~2100 baris): dunia 3D, semua dialog/aktivitas, tick loop, HUD, minimap, camera |
@@ -41,12 +42,13 @@ Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit).
 
 ## Fitur
 
+- **Login siswa**: NIS + kata sandi akun LMS Al Abidin (sama dengan forum ABBS). Setelah profil karakter tersimpan, login berikutnya langsung masuk ke game tanpa kustomisasi ulang. Tombol **Keluar** ada di HUD.
 - **Kustomisasi karakter**: putra/putri, jilbab syari untuk putri (tanpa poni, rok panjang), 3 gaya rambut putra, kacamata, badan, 6 tema seragam (disimpan otomatis).
 - **5 kelas + guru**: Matematika, IPA, B. Indonesia, B. Inggris, PAI — materi tampil di papan tulis 3D, kuis 3 soal per kelas, tips guru berputar kalau pelajaran diulang.
 - **Kantin**: aritmetika sosial (total = harga × jumlah, saldo) + mini-game **Latihan Hitung Cepat** (soal acak +/−/×, streak, bonus XP terbatas per sesi).
 - **Lapangan olahraga**: sepak bola, voli, basket, bulu tangkis + mini-game lempar basket & penalti (bar tenaga osilasi, bola parabola), **giring bola ke gawang** (bola didorong kaki), **passing voli 5x** dan **smash bulu tangkis 3x**.
 - **Perpustakaan & Lab IPA**: quest ambil buku + **Misi Buku Hilang** (5 buku berserakan di halaman & sekitar sekolah); eksperimen cairan A/B/C + indikator, **rangkaian listrik**, dan **magnet**.
-- **Peta terbuka**: halaman luas dengan pepohonan & batu pemandang, bebas dijelajahi tanpa batas tembok.
+- **Peta terbuka**: lapangan olahraga diperbesar (pagar digeser keluar) + **Taman Sekolah** baru di barat: jalan setapak, kolam, bunga, bangku, dan gazebo. Halaman luas dengan pepohonan & batu pemandang, bebas dijelajahi tanpa batas tembok.
 - **Siang/malam real-time**: warna langit, posisi matahari/bulan 3D, dan intensitas cahaya mengikuti jam perangkat; jam tampil di HUD.
 - **Mushola**: tap urutan wudhu yang benar (5 langkah).
 - **Kebun sekolah**: siram 3 bedengan dengan mendekatinya.
@@ -61,14 +63,16 @@ Deploy otomatis: setiap push ke `main`, GitHub Pages membangun ulang (~1 menit).
 
 localStorage (sumber kebenaran):
 
+- `sekolahRpg.sesi` — data siswa yang login (`{ id, nis, nama, kelas }`)
 - `sekolahRpg.karakter.v1` — pilihan karakter
 - `sekolahRpg.progres.v1` — `{ xp, done{}, notified, uang, rank, trash[], kebun[], lab{}, quests{}, stars[], playMs, carry }`
-- `sekolahRpg.device` — ID perangkat, `sekolahRpg.sfx` — status suara
+- `sekolahRpg.lastUser` — id siswa pemilik data lokal; ganti siswa = data lokal dibersihkan (data tetap aman di cloud)
+- `sekolahRpg.sfx` — status suara
 
 Cloud (Supabase project `djybwvdjipxftxmtqjbt`, tabel **`app_settings`** — tabel publik yang sudah ada, anon key full CRUD, aman karena aplikasi lain hanya membaca key `wa_template_%`):
 
-- Key per perangkat: `rpg_save_<deviceId>`, value JSON string.
-- `js/cloud.js` membungkus `localStorage.setItem`: push debounce 1,5 detik (+ keepalive saat pagehide); pull hanya jika localStorage kosong (perangkat baru); timeout fetch 4–5 detik; localStorage tetap sumber kebenaran.
+- Key per siswa: `rpg_save_<user id>`, value JSON string. Satu akun = satu simpanan, bisa dilanjutkan dari perangkat mana pun.
+- `js/cloud.js` membungkus `localStorage.setItem`: push debounce 1,5 detik (+ keepalive saat pagehide), upsert `on_conflict=key`; pull saat login kalau data lokal kosong; timeout fetch 4–5 detik; localStorage tetap sumber kebenaran.
 
 ## Konvensi kode
 

@@ -39,6 +39,14 @@ const SPORTS = [
   }
 ];
 
+const FIELD_X0 = 16.8;
+const FIELD_SX = 1.6;
+const FIELD_SZ = 1.4;
+const wx = x => FIELD_X0 + (x - FIELD_X0) * FIELD_SX;
+const wz = z => z * FIELD_SZ;
+const ww = v => v * FIELD_SX;
+const wd = v => v * FIELD_SZ;
+
 export const QUESTS = [
   { id: 'q1', xp: 15, giver: 'kantin', item: 'Paket jajanan', target: 'mtk', targetLabel: 'Pak Ahmad — Kelas Matematika' },
   { id: 'q2', xp: 15, giver: 'mtk', item: 'Spidol untuk Ibu Sari', target: 'ipa', targetLabel: 'Ibu Sari — Kelas IPA' },
@@ -75,7 +83,7 @@ export const STAR_POS = [
 ];
 
 export const HUNT_POS = [
-  [-23.5, 10.5], [19.3, -7.8], [43.3, 7.8], [44.5, -7.5], [5.5, 12.5]
+  [-23.5, 10.5], [19.3, -7.8], [-31, 6.5], [-45.5, 6.8], [5.5, 12.5]
 ];
 
 export const GARDEN_BEDS = [
@@ -353,7 +361,7 @@ function buildTeacher(room) {
   return g;
 }
 
-export function createGame({ canvas, renderer, characterConfig, toast, onEdit }) {
+export function createGame({ canvas, renderer, characterConfig, toast, onEdit, onLogout }) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#202326');
   scene.fog = new THREE.Fog('#202326', 36, 70);
@@ -563,9 +571,9 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   scene.add(buKantin);
   addCollider(9.7, 10.7, 3.9, 4.8);
 
-  const field = mesh(new THREE.PlaneGeometry(24.6, 17.6), mat('#3a7d44', { roughness: 1 }));
+  const field = mesh(new THREE.PlaneGeometry(ww(24.6), wd(17.6)), mat('#3a7d44', { roughness: 1 }));
   field.rotation.x = -Math.PI / 2;
-  field.position.set(29.1, 0, 0);
+  field.position.set(wx(29.1), 0, 0);
   field.receiveShadow = true;
   scene.add(field);
 
@@ -576,47 +584,48 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     p.receiveShadow = true;
     scene.add(p);
   };
-  patch(5, 7.6, 31.5, 0, '#4a5a7a');
-  patch(4.6, 4.4, 37.3, -1.2, '#6b4a2f');
-  patch(5, 3.6, 31.5, 6.4, '#2e6b4f');
+  patch(ww(5), wd(7.6), wx(31.5), wz(0), '#4a5a7a');
+  patch(ww(4.6), wd(4.4), wx(37.3), wz(-1.2), '#6b4a2f');
+  patch(ww(5), wd(3.6), wx(31.5), wz(6.4), '#2e6b4f');
 
   for (const gx of [19.6, 27.2]) {
-    for (const s of [-1, 1]) scene.add(place(box(0.12, 1.2, 0.12, whiteMat), gx, 0.6, s * 1.5));
-    scene.add(place(box(0.12, 0.12, 3.12, whiteMat), gx, 1.2, 0));
+    for (const s of [-1, 1]) scene.add(place(box(0.12, 1.2, 0.12, whiteMat), wx(gx), 0.6, wz(s * 1.5)));
+    scene.add(place(box(0.12, 0.12, wd(3.12), whiteMat), wx(gx), 1.2, 0));
   }
-  scene.add(place(mesh(new THREE.SphereGeometry(0.22, 14, 12), whiteMat), 23.4, 0.22, 0));
+  scene.add(place(mesh(new THREE.SphereGeometry(0.22, 14, 12), whiteMat), wx(23.4), 0.22, 0));
   const footBall = scene.children[scene.children.length - 1];
   footBall.userData.home = footBall.position.clone();
 
-  for (const s of [-1, 1]) scene.add(place(box(0.12, 2.2, 0.12, whiteMat), 31.5, 1.1, s * 2.1));
-  scene.add(place(box(0.05, 1.0, 4.2, mat('#ffffff', { transparent: true, opacity: 0.4 })), 31.5, 1.55, 0));
-  const volleyBall = place(mesh(new THREE.SphereGeometry(0.2, 14, 12), mat('#3f7fd9')), 30.2, 0.2, 1.0);
+  for (const s of [-1, 1]) scene.add(place(box(0.12, 2.2, 0.12, whiteMat), wx(31.5), 1.1, wz(s * 2.1)));
+  scene.add(place(box(0.05, 1.0, wd(4.2), mat('#ffffff', { transparent: true, opacity: 0.4 })), wx(31.5), 1.55, 0));
+  const volleyBall = place(mesh(new THREE.SphereGeometry(0.2, 14, 12), mat('#3f7fd9')), wx(30.2), 0.2, wz(1.0));
   scene.add(volleyBall);
   volleyBall.userData.home = volleyBall.position.clone();
 
-  scene.add(place(box(0.16, 2.9, 0.16, darkMat), 39.6, 1.45, -1.2));
-  scene.add(place(box(0.08, 1.0, 1.6, boardMat), 39.42, 2.55, -1.2));
-  scene.add(place(mesh(new THREE.TorusGeometry(0.3, 0.035, 10, 20), mat('#d9731f')), 39.2, 2.1, -1.2, [Math.PI / 2, 0, 0]));
-  scene.add(place(mesh(new THREE.SphereGeometry(0.19, 14, 12), mat('#d9731f')), 38.9, 0.19, -0.4));
+  scene.add(place(box(0.16, 2.9, 0.16, darkMat), wx(39.6), 1.45, wz(-1.2)));
+  scene.add(place(box(0.08, 1.0, wd(1.6), boardMat), wx(39.42), 2.55, wz(-1.2)));
+  scene.add(place(mesh(new THREE.TorusGeometry(0.3, 0.035, 10, 20), mat('#d9731f')), wx(39.2), 2.1, wz(-1.2), [Math.PI / 2, 0, 0]));
+  scene.add(place(mesh(new THREE.SphereGeometry(0.19, 14, 12), mat('#d9731f')), wx(38.9), 0.19, wz(-0.4)));
   const basketBall = scene.children[scene.children.length - 1];
   basketBall.userData.home = basketBall.position.clone();
 
-  for (const s of [-1, 1]) scene.add(place(box(0.1, 1.5, 0.1, whiteMat), 31.5 + s * 2.3, 0.75, 6.4));
-  scene.add(place(box(4.6, 0.7, 0.04, mat('#ffffff', { transparent: true, opacity: 0.4 })), 31.5, 1.05, 6.4));
-  const shuttle = place(mesh(new THREE.ConeGeometry(0.09, 0.16, 10), whiteMat), 30.6, 0.1, 5.8);
+  for (const s of [-1, 1]) scene.add(place(box(0.1, 1.5, 0.1, whiteMat), wx(31.5) + s * ww(2.3), 0.75, wz(6.4)));
+  scene.add(place(box(ww(4.6), 0.7, 0.04, mat('#ffffff', { transparent: true, opacity: 0.4 })), wx(31.5), 1.05, wz(6.4)));
+  const shuttle = place(mesh(new THREE.ConeGeometry(0.09, 0.16, 10), whiteMat), wx(30.6), 0.1, wz(5.8));
   scene.add(shuttle);
   shuttle.userData.home = shuttle.position.clone();
 
-  const fenceXs = [17.3, 21.8, 26.3, 30.8, 35.3, 39.8];
+  const fenceXs = [17.3, 21.8, 26.3, 30.8, 35.3, 39.8].map(wx);
   for (const sz of [8.8, -8.8]) {
-    for (const ry of [0.45, 0.8]) scene.add(place(box(23.9, 0.07, 0.07, whiteMat), 29.1, ry, sz));
-    for (const fx of [...fenceXs, 40.9]) scene.add(place(box(0.12, 0.85, 0.12, whiteMat), fx, 0.42, sz));
+    const zz = wz(sz);
+    for (const ry of [0.45, 0.8]) scene.add(place(box(ww(23.9), 0.07, 0.07, whiteMat), wx(29.1), ry, zz));
+    for (const fxp of [...fenceXs, wx(40.9)]) scene.add(place(box(0.12, 0.85, 0.12, whiteMat), fxp, 0.42, zz));
   }
-  for (const ry of [0.45, 0.8]) scene.add(place(box(0.07, 0.07, 17.6, whiteMat), 40.9, ry, 0));
-  scene.add(place(box(0.12, 0.85, 0.12, whiteMat), 40.9, 0.42, 0));
-  addCollider(16.9, 41.3, 8.7, 8.95);
-  addCollider(16.9, 41.3, -8.95, -8.7);
-  addCollider(40.75, 41.05, -8.95, 8.95);
+  for (const ry of [0.45, 0.8]) scene.add(place(box(0.07, 0.07, wd(17.6), whiteMat), wx(40.9), ry, 0));
+  scene.add(place(box(0.12, 0.85, 0.12, whiteMat), wx(40.9), 0.42, 0));
+  addCollider(wx(16.9), wx(41.3), wz(8.7), wz(8.95));
+  addCollider(wx(16.9), wx(41.3), wz(-8.95), wz(-8.7));
+  addCollider(wx(40.75), wx(41.05), wz(-8.95), wz(8.95));
 
   scene.add(place(box(0.08, 3.2, 0.08, panelMat), -18.5, 1.6, -3));
   scene.add(place(box(0.9, 0.24, 0.04, mat('#d43b3b')), -18.06, 2.95, -3));
@@ -641,13 +650,46 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   tree(-21.3, 4.6);
   tree(-15.2, -12.2);
   tree(-3.4, -13.0);
-  tree(17.9, -6.9, 0.85);
-  tree(42.0, 6.9, 0.9);
-  for (const [tx, tz, ts] of [[-30, 0, 1.1], [-28, 11], [-29, -13], [-14, -19], [2, -19.5], [16, -18], [26, -16], [36, -16], [46, -14], [49, -2], [47, 12], [34, 14], [18, 14], [-6, 16], [-20, 16], [56, 4, 1.15], [56, -10], [-36, 6, 1.1], [-36, -6], [44, 20]]) tree(tx, tz, ts || 1);
-  for (const [rx, rz] of [[-26, -7], [-24, 8], [10, 16], [30, 18], [50, -8], [52, 8], [-32, -16], [40, -19]]) {
+  tree(14.0, -13.5, 0.85);
+  tree(60.5, 6.9, 0.9);
+  for (const [tx, tz, ts] of [[-27, -9, 1.1], [-28, 11], [-29, -13], [-14, -19], [2, -19.5], [16, -18], [26, -16], [36, -16], [46, -14], [62, -2], [47, 17], [34, 14], [18, 14], [-6, 16], [-20, 16], [62, 4, 1.15], [62, -10], [-34, 12, 1.1], [-36, -6], [44, 20]]) tree(tx, tz, ts || 1);
+  for (const [rx, rz] of [[-26, -7], [-24, 8], [10, 16], [30, 18], [62, -8], [62, 8], [-32, -16], [40, -19]]) {
     scene.add(place(box(0.8, 0.5, 0.7, mat('#7a7f85')), rx, 0.25, rz, [0, rx, 0]));
     addCollider(rx - 0.4, rx + 0.4, rz - 0.35, rz + 0.35);
   }
+
+  const parkFloor = mesh(new THREE.PlaneGeometry(28, 22), mat('#4f8a4a', { roughness: 1 }));
+  parkFloor.rotation.x = -Math.PI / 2;
+  parkFloor.position.set(-38, 0.015, 0);
+  parkFloor.receiveShadow = true;
+  scene.add(parkFloor);
+
+  for (let i = 0; i < 12; i++) {
+    scene.add(place(box(1.5, 0.05, 1.5, mat('#8d8f92', { roughness: 1 })), -22.5 - i * 2.4, 0.03, 0));
+  }
+
+  const pond = mesh(new THREE.CircleGeometry(3.2, 28), new THREE.MeshStandardMaterial({ color: '#2f7fa8', roughness: 0.2, metalness: 0.15 }));
+  pond.rotation.x = -Math.PI / 2;
+  pond.position.set(-40, 0.05, 6.5);
+  scene.add(pond);
+  for (let i = 0; i < 24; i++) {
+    const a = i / 24 * Math.PI * 2;
+    scene.add(place(box(0.16, 0.32, 0.16, mat(['#e5484d', '#ffd35c', '#c084fc'][i % 3])), -40 + Math.cos(a) * 4.1, 0.16, 6.5 + Math.sin(a) * 4.1));
+  }
+
+  for (const [bx, bz] of [[-34, -3.2], [-42, -3.2]]) {
+    scene.add(place(box(1.8, 0.12, 0.55, trimMat), bx, 0.5, bz));
+    scene.add(place(box(1.8, 0.5, 0.12, trimMat), bx, 0.78, bz - 0.26));
+    for (const s of [-1, 1]) scene.add(place(box(0.14, 0.5, 0.5, darkMat), bx + s * 0.72, 0.25, bz));
+    addCollider(bx - 0.95, bx + 0.95, bz - 0.5, bz + 0.35);
+  }
+
+  for (const s of [-1, 1]) {
+    for (const t of [-1, 1]) scene.add(place(box(0.18, 2.4, 0.18, trimMat), -45 + s * 1.6, 1.2, -5 + t * 1.6));
+  }
+  scene.add(place(box(3.8, 0.18, 3.8, trimMat), -45, 2.5, -5));
+  addCollider(-46.8, -43.2, -6.8, -3.2);
+  scene.add(makeSprite('TAMAN SEKOLAH', 'Tempat bersantai', '#3fae5f', [3.2, 0.95], [-31, 3.0, 9]));
 
   for (const bz of [-3.4, 3.4]) {
     addSolid(1.9, 0.45, 0.6, -19.6, 0.225, bz, mat('#4a3423'), true, true);
@@ -806,10 +848,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   addCollider(18.1, 19.1, -0.5, 0.5);
 
   const sportSigns = [
-    ['SEPAK BOLA', 'Pak Tono', SPORTS[0].color, 23.4, 2.4, 0],
-    ['VOLI', 'Pak Tono', SPORTS[1].color, 31.5, 2.6, 0],
-    ['BASKET', 'Pak Tono', SPORTS[2].color, 37.4, 2.7, -1.2],
-    ['BULU TANGKIS', 'Pak Tono', SPORTS[3].color, 31.5, 2.4, 6.4]
+    ['SEPAK BOLA', 'Pak Tono', SPORTS[0].color, wx(23.4), 2.4, wz(0)],
+    ['VOLI', 'Pak Tono', SPORTS[1].color, wx(31.5), 2.6, wz(0)],
+    ['BASKET', 'Pak Tono', SPORTS[2].color, wx(37.4), 2.7, wz(-1.2)],
+    ['BULU TANGKIS', 'Pak Tono', SPORTS[3].color, wx(31.5), 2.4, wz(6.4)]
   ];
   sportSigns.forEach(([t, sub, col, x, y, z], si) => {
     const s = makeSprite(t, sub, col, [2.9, 0.95], [x, y, z]);
@@ -858,6 +900,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       <button id="gBack" type="button">Edit Karakter</button>
       <div class="g-mid"><b id="gName"></b><span id="gProg"></span><span id="gClock"></span></div>
       <div class="g-xp" id="gXp">XP 0</div>
+      <button id="gOut" type="button">Keluar</button>
     </div>
     <canvas id="gMap" width="120" height="120"></canvas>
     <div id="gJoy"><div id="gKnob"></div></div>
@@ -895,6 +938,8 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
   };
   updateHud();
   hud.querySelector('#gXp').addEventListener('click', openObjectives);
+  if (onLogout) hud.querySelector('#gOut').addEventListener('click', onLogout);
+  else hud.querySelector('#gOut').hidden = true;
   const clockEl = hud.querySelector('#gClock');
 
   let skySec = -1;
@@ -941,17 +986,19 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
 
   const mapEl = hud.querySelector('#gMap');
   const mapCtx = mapEl.getContext('2d');
-  const W2M = (x, z) => [(x + 25) / 70 * 120, (z + 20) / 32 * 120];
+  const MAP_X0 = -55;
+  const MAP_Z0 = -28;
+  const W2M = (x, z) => [(x - MAP_X0) / 122 * 120, (z - MAP_Z0) / 56 * 120];
   const mapDots = [
     { x: () => 11.15, z: () => 5.3, c: '#c96f2e' },
     { x: () => -9, z: () => 5.5, c: '#b8863b' },
     { x: () => 1.075, z: () => 5.3, c: '#39c2ff' },
     { x: () => 2.5, z: () => -10.8, c: '#0e9f9f' },
     { x: () => 18.6, z: () => 0, c: '#2e9e5b' },
-    { x: () => 23.4, z: () => 0, c: '#2e9e5b' },
-    { x: () => 31.5, z: () => 0, c: '#3f7fd9' },
-    { x: () => 37.4, z: () => -1.2, c: '#d9822b' },
-    { x: () => 31.5, z: () => 6.4, c: '#8b5cf6' },
+    { x: () => wx(23.4), z: () => wz(0), c: '#2e9e5b' },
+    { x: () => wx(31.5), z: () => wz(0), c: '#3f7fd9' },
+    { x: () => wx(37.4), z: () => wz(-1.2), c: '#d9822b' },
+    { x: () => wx(31.5), z: () => wz(6.4), c: '#8b5cf6' },
     ...SCHOOL_ROOMS.map(r => ({ x: () => r.cx, z: () => -5, c: r.color }))
   ];
   function drawMap(t) {
@@ -970,12 +1017,13 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
       c.arc(mx, mz, r, 0, Math.PI * 2);
       c.fill();
     };
-    rect(16.8, -8.8, 41.4, 8.8, '#2e5b3a');
+    rect(wx(16.8), wz(-8.8), wx(41.4), wz(8.8), '#2e5b3a');
     rect(-16.5, -8.3, 16.5, 2.3, '#3c4148');
     rect(6.0, 2.3, 16.3, 8.3, '#453522');
     rect(-14, 2.3, -4, 8.3, '#4a3f28');
     rect(-4, 2.3, 6.15, 8.3, '#2f3a45');
     rect(-1, -13.5, 6, -8.3, '#1f4a3a');
+    rect(-52, -11, -24, 11, '#2e5b3a');
     for (const d of mapDots) dot(d.x(), d.z(), d.c, 2.4);
     for (const tm of trashMeshes) dot(tm.mesh.position.x, tm.mesh.position.z, '#9aa0a6', 1.4);
     GARDEN_BEDS.forEach((b, i) => {
@@ -2013,10 +2061,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     popIn(dlgEl);
   }
 
-  const SHOT_BB = { id: 'bball', label: 'LEMPAR BASKET', color: '#d9822b', hint: 'Masukkan bola basket ke ring!', ball: basketBall, target: new THREE.Vector3(39.2, 2.15, -1.2), arc: 2.6, z0: 0.72, z1: 0.92, period: 1600 };
-  const SHOT_FB = { id: 'fb', label: 'TENDANG PENALTI', color: '#2e9e5b', hint: 'Tendang bola ke gawang!', ball: footBall, target: new THREE.Vector3(27.2, 0.7, 0), arc: 1.8, z0: 0.7, z1: 0.94, period: 1500 };
-  const SHOT_VB = { id: 'vbplay', label: 'PASSING VOLI', color: '#3f7fd9', hint: 'Pukul bola melewati net 5 kali beruntun!', ball: volleyBall, target: new THREE.Vector3(32.6, 0.8, -0.6), arc: 2.2, z0: 0.7, z1: 0.92, period: 1400, need: 5, count: 0 };
-  const SHOT_BT = { id: 'btplay', label: 'SMASH BULU TANGKIS', color: '#8b5cf6', hint: 'Smash shuttlecock melewati net 3 kali beruntun!', ball: shuttle, target: new THREE.Vector3(32.4, 0.35, 7.15), arc: 1.5, z0: 0.7, z1: 0.93, period: 1300, need: 3, count: 0 };
+  const SHOT_BB = { id: 'bball', label: 'LEMPAR BASKET', color: '#d9822b', hint: 'Masukkan bola basket ke ring!', ball: basketBall, target: new THREE.Vector3(wx(39.2), 2.15, wz(-1.2)), arc: 2.6, z0: 0.72, z1: 0.92, period: 1600 };
+  const SHOT_FB = { id: 'fb', label: 'TENDANG PENALTI', color: '#2e9e5b', hint: 'Tendang bola ke gawang!', ball: footBall, target: new THREE.Vector3(wx(27.2), 0.7, wz(0)), arc: 1.8, z0: 0.7, z1: 0.94, period: 1500 };
+  const SHOT_VB = { id: 'vbplay', label: 'PASSING VOLI', color: '#3f7fd9', hint: 'Pukul bola melewati net 5 kali beruntun!', ball: volleyBall, target: new THREE.Vector3(wx(32.6), 0.8, wz(-0.6)), arc: 2.2, z0: 0.7, z1: 0.92, period: 1400, need: 5, count: 0 };
+  const SHOT_BT = { id: 'btplay', label: 'SMASH BULU TANGKIS', color: '#8b5cf6', hint: 'Smash shuttlecock melewati net 3 kali beruntun!', ball: shuttle, target: new THREE.Vector3(wx(32.4), 0.35, wz(7.15)), arc: 1.5, z0: 0.7, z1: 0.93, period: 1300, need: 3, count: 0 };
 
   const interactables = [
     { id: 'kantin', label: 'Kantin — Bu Kantin', x: 10.2, z: 4.9, r: 2.4, open: openCanteen },
@@ -2025,14 +2073,14 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     { id: 'lab', label: 'Eksperimen Lab IPA', x: 1.075, z: 5.3, r: 2.8, open: openLab },
     { id: 'mus', label: 'Latihan Wudhu', x: 2.5, z: -10.8, r: 2.6, open: openWudhu },
     { id: 'tono', label: 'Bicara Pak Tono', x: 18.6, z: 0, r: 2.4, open: openPjok },
-    { id: 'sb', label: 'Pelajaran Sepak Bola', x: 23.4, z: 0, r: 2.9, open: () => openLesson(SPORTS[0]) },
-    { id: 'fb', label: 'Tendang Penalti', x: 25.6, z: 0, r: 2.0, open: () => openShot(SHOT_FB) },
-    { id: 'vb', label: 'Pelajaran Voli', x: 31.5, z: 0, r: 2.9, open: () => openLesson(SPORTS[1]) },
-    { id: 'bb', label: 'Pelajaran Basket', x: 37.4, z: -1.2, r: 2.9, open: () => openLesson(SPORTS[2]) },
-    { id: 'bball', label: 'Lempar Basket', x: 38.5, z: -0.9, r: 2.6, open: () => openShot(SHOT_BB) },
-    { id: 'bt', label: 'Pelajaran Bulu Tangkis', x: 31.5, z: 6.0, r: 2.9, open: () => openLesson(SPORTS[3]) },
-    { id: 'vbplay', label: 'Passing Voli', x: 30.2, z: 1.0, r: 2.0, open: () => openShot(SHOT_VB) },
-    { id: 'btplay', label: 'Smash Bulu Tangkis', x: 30.6, z: 5.8, r: 2.0, open: () => openShot(SHOT_BT) }
+    { id: 'sb', label: 'Pelajaran Sepak Bola', x: wx(23.4), z: wz(0), r: 3.4, open: () => openLesson(SPORTS[0]) },
+    { id: 'fb', label: 'Tendang Penalti', x: wx(25.6), z: wz(0), r: 2.6, open: () => openShot(SHOT_FB) },
+    { id: 'vb', label: 'Pelajaran Voli', x: wx(31.5), z: wz(0), r: 3.4, open: () => openLesson(SPORTS[1]) },
+    { id: 'bb', label: 'Pelajaran Basket', x: wx(37.4), z: wz(-1.2), r: 3.4, open: () => openLesson(SPORTS[2]) },
+    { id: 'bball', label: 'Lempar Basket', x: wx(38.5), z: wz(-0.9), r: 2.9, open: () => openShot(SHOT_BB) },
+    { id: 'bt', label: 'Pelajaran Bulu Tangkis', x: wx(31.5), z: wz(6.0), r: 3.4, open: () => openLesson(SPORTS[3]) },
+    { id: 'vbplay', label: 'Passing Voli', x: wx(30.2), z: wz(1.0), r: 2.4, open: () => openShot(SHOT_VB) },
+    { id: 'btplay', label: 'Smash Bulu Tangkis', x: wx(30.6), z: wz(5.8), r: 2.4, open: () => openShot(SHOT_BT) }
   ];
 
   const ringGeo = new THREE.RingGeometry(0.55, 0.75, 28);
@@ -2098,7 +2146,7 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
     if (moving) {
       mx /= mLen;
       mz /= mLen;
-      const speed = 2.4 * Math.min(1, jLen);
+      const speed = 3.4 * Math.min(1, jLen);
       let px = player.position.x + mx * speed * dt;
       let pz = player.position.z + mz * speed * dt;
       [px, pz] = resolveCollisions(px, pz, 0.32);
@@ -2109,10 +2157,10 @@ export function createGame({ canvas, renderer, characterConfig, toast, onEdit })
         const bdx = footBall.position.x - player.position.x;
         const bdz = footBall.position.z - player.position.z;
         if (Math.hypot(bdx, bdz) < 0.85) {
-          footBall.position.x = Math.min(40.5, Math.max(17.5, footBall.position.x + mx * speed * dt * 1.2));
-          footBall.position.z = Math.min(8.5, Math.max(-8.5, footBall.position.z + mz * speed * dt * 1.2));
+          footBall.position.x = Math.min(wx(40.5), Math.max(wx(17.5), footBall.position.x + mx * speed * dt * 1.2));
+          footBall.position.z = Math.min(wz(8.5), Math.max(wz(-8.5), footBall.position.z + mz * speed * dt * 1.2));
           footBall.rotation.x += dt * 10;
-          if (footBall.position.x > 26.75 && Math.abs(footBall.position.z) < 1.45 && !sbGolCd) {
+          if (footBall.position.x > wx(26.75) && Math.abs(footBall.position.z) < wd(1.45) && !sbGolCd) {
             sbGolCd = true;
             setTimeout(() => {
               footBall.position.copy(footBall.userData.home);

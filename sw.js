@@ -1,4 +1,4 @@
-const CACHE = 'rpg-abbs-v2';
+const CACHE = 'rpg-abbs-v3';
 const CORE = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const CORE = [
   './js/options.js',
   './js/character.js',
   './js/main.js',
+  './js/auth.js',
   './js/schoolData.js',
   './js/game.js',
   './js/cloud.js'
